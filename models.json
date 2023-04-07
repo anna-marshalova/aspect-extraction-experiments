@@ -1,0 +1,72 @@
+{
+  "mbert": {
+    "pretrained_model_name": "bert-base-multilingual-cased",
+    "config_class": "BertConfig",
+    "model_class": "TFBertForTokenClassification",
+    "tokenizer_class": "TFBertTokenizer",
+    "config": {
+      "from_pt": false
+    },
+    "learning_rate": 1e-5
+  },
+  "rubert": {
+    "pretrained_model_name": "DeepPavlov/rubert-base-cased",
+    "config_class": "BertConfig",
+    "model_class": "TFBertForTokenClassification",
+    "tokenizer_class": "TFBertTokenizer",
+    "config": {
+      "from_pt": true
+    },
+    "learning_rate": 1e-5
+  },
+  "rubert-tiny": {
+    "pretrained_model_name": "cointegrated/rubert-tiny2",
+    "config_class": "BertConfig",
+    "model_class": "TFBertForTokenClassification",
+    "tokenizer_class": "TFBertTokenizer",
+    "config": {
+      "from_pt": true
+    },
+    "learning_rate": 1e-5
+  },
+  "ruSciBERT": {
+    "pretrained_model_name": "sberbank-ai/ruSciBERT",
+    "config_class": "RobertaConfig",
+    "model_class": "TFRobertaForTokenClassification",
+    "tokenizer_class": "TFRobertaTokenizer",
+    "config": {
+      "from_pt": true
+    },
+    "learning_rate": 1e-5
+  },
+  "mBERT_BiLSTM": {
+    "pretrained_model_name": "bert-base-multilingual-cased",
+    "config_class": "BertConfig",
+    "model_class": "TFBertModel",
+    "tokenizer_class": "TFBertTokenizer",
+    "config": {
+      "from_pt": false, "dropout_rate":0.1
+    },
+    "learning_rate": 1e-5
+  },
+  "mBERT_BiLSTM_frozen": {
+    "pretrained_model_name": "bert-base-multilingual-cased",
+    "config_class": "BertConfig",
+    "model_class": "TFBertModel",
+    "tokenizer_class": "TFBertTokenizer",
+    "config": {
+      "from_pt": false, "dropout_rate":0.1, "LSTM_size": 50
+    },
+    "learning_rate": 1e-3
+  },
+  "mBERT_crf": {
+    "pretrained_model_name": "bert-base-multilingual-cased",
+    "config_class": "BertConfig",
+    "model_class": "TFBertModel",
+    "tokenizer_class": "TFBertTokenizer",
+    "config": {
+      "from_pt": false, "dropout_rate":0.1, "LSTM_size": 50
+    },
+    "learning_rate": 1e-5
+  }
+}
