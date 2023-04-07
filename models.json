@@ -10,7 +10,8 @@
     "tokenizer_config": {
       "do_lower_case": false
     },
-    "learning_rate": 1e-5
+    "learning_rate": 1e-5,
+    "loss" : "BinaryCrossentropy"
   },
   "rubert": {
     "pretrained_model_name": "DeepPavlov/rubert-base-cased",
@@ -20,7 +21,8 @@
     "model_config": {
       "from_pt": true
     },
-    "learning_rate": 1e-5
+    "learning_rate": 1e-5,
+    "loss" : "BinaryCrossentropy"
   },
   "rubert-tiny": {
     "pretrained_model_name": "cointegrated/rubert-tiny2",
@@ -30,7 +32,8 @@
     "model_config": {
       "from_pt": true
     },
-    "learning_rate": 1e-5
+    "learning_rate": 1e-5,
+    "loss" : "BinaryCrossentropy"
   },
   "ruSciBERT": {
     "pretrained_model_name": "sberbank-ai/ruSciBERT",
@@ -40,7 +43,8 @@
     "model_config": {
       "from_pt": true
     },
-    "learning_rate": 1e-5
+    "learning_rate": 1e-5,
+    "loss" : "BinaryCrossentropy"
   },
   "mBERT_BiLSTM": {
     "pretrained_model_name": "bert-base-multilingual-cased",
@@ -50,7 +54,8 @@
     "model_config": {
       "from_pt": false, "dropout_rate":0.1
     },
-    "learning_rate": 1e-5
+    "learning_rate": 1e-5,
+    "loss" : "BinaryCrossentropy"
   },
   "mBERT_BiLSTM_frozen": {
     "pretrained_model_name": "bert-base-multilingual-cased",
@@ -60,7 +65,8 @@
     "model_config": {
       "from_pt": false, "dropout_rate":0.1, "LSTM_size": 50
     },
-    "learning_rate": 1e-3
+    "learning_rate": 1e-3,
+    "loss" : "BinaryCrossentropy"
   },
   "mBERT_crf": {
     "pretrained_model_name": "bert-base-multilingual-cased",
@@ -70,6 +76,7 @@
     "model_config": {
       "from_pt": false, "dropout_rate":0.1, "LSTM_size": 50
     },
-    "learning_rate": 1e-5
+    "learning_rate": 1e-5,
+    "loss" : "SigmoidFocalCrossEntropy"
   }
 }

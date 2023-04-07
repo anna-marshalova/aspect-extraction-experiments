@@ -79,7 +79,7 @@ class HeuristicValidator:
         Добавление аспекта в тэг. Если тэг уже состоит из двух аспектов, то третий просто не добавляется
         :param aspect: Аспект, который нужно добавить
         :param label: Тэг, в который нужно добавить аспект
-        :return: Тэг с добавленнм аспектом
+        :return: Тэг с добавленым аспектом
         """
         if label == 'O':
             aspect_added = aspect
@@ -177,7 +177,7 @@ class HeuristicValidator:
         return [updated_result[i] for i in range(len(result))]
 
     def _heuristic_single_word(self, result: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
-        """ Удаление однословных тегов
+        """ Удаление однословных тэгов
         :param result: Список кортежей, в которых первый элемент - токен, второй - тэг
         :return: Список кортежей, в которых первый элемент - токен, второй - тэг
         """
@@ -215,7 +215,7 @@ class HeuristicValidator:
         return [updated_result[i] for i in range(len(result))]
 
     def _heuristic_order(self, result: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
-        """ Вложенный аспект должен стоять на втором месте. Это нужно для правильной разметки тегами.
+        """ Вложенный аспект должен стоять на втором месте. Это нужно для правильной разметки тэгами.
         :param result: Список кортежей, в которых первый элемент - токен, второй - тэг
         :return: Список кортежей, в которых первый элемент - токен, второй - тэг
         """

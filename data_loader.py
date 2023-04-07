@@ -1,8 +1,9 @@
 import os
 import csv
+from itertools import chain
 from tqdm.notebook import tqdm
 from typing import Tuple, List
-from utils import ASPECTS_LIST, flatten, paths
+from utils import ASPECTS_LIST, paths
 
 
 class DataLoader:
@@ -30,9 +31,9 @@ class DataLoader:
 
     def process_file(self, file_path: str) -> Tuple[List, List, List]:
         """
-          Загрузка одного файла с тектом. Если текст содержит большее заданного числа токенов, он делится на несколько частей.
+          Загрузка одного файла с текстом. Если текст содержит большее заданного числа токенов, он делится на несколько частей.
           :param file_path: Путь к файлу
-          :return: ``text_parts``:Части текста  (спсики токенов),
+          :return: ``text_parts``:Части текста  (списки токенов),
                    ``text_part_labels``: Тэги для токенов в частях текста
           """
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -62,7 +63,7 @@ class DataLoader:
         """
           Загрузка текстов из одной папки.
           :param dir_path: Путь к папке
-          :return: ``samples``:Тексты  (спсики токенов),
+          :return: ``samples``:Тексты  (списки токенов),
                    ``labels``: Тэги для токенов в текстах
           """
         samples = []
@@ -82,8 +83,8 @@ class DataLoader:
         Загрузка датасета
         :param mode: {'flat', 'cross_domain_flat','cross_domain'}
             ``flat``: Тексты загружаются из одной папки
-            ``cross_domain_flat``: Тексты загружаются из разых папок, но сохраняются в одном списке
-            ``cross_domain``: Тексты загружаются из разых папок и сохраняются в разных списках
+            ``cross_domain_flat``: Тексты загружаются из разных папок, но сохраняются в одном списке
+            ``cross_domain``: Тексты загружаются из разных папок и сохраняются в разных списках
         :return: ``dataset_samples``: Тексты,
                 ``dataset_labels``: Тэги для токенов в текстах
                 ``domains``: Список доменов
@@ -98,10 +99,9 @@ class DataLoader:
                 dataset_samples.append(samples)
                 dataset_labels.append(labels)
             if mode == 'cross_domain_flat':
-                return flatten(dataset_samples), flatten(
-                    dataset_labels), domains  # mode = 'cross_domain_flat' Tuple[List[List], List[List], List] Списки токенов в списках текстов
-            return flatten(dataset_samples), flatten(
-                dataset_labels), domains  # mode = 'cross_domain' Tuple[List[List[List]], List[List[List]], List] Списки токенов в списках текстов в списках доменов
+                return list(chain.from_iterable(dataset_samples)), list(chain.from_iterable(
+                    dataset_labels)), domains  # mode = 'cross_domain_flat' Tuple[List[List], List[List], List] Списки токенов в списках текстов
+            return dataset_samples, dataset_labels, domains  # mode = 'cross_domain' Tuple[List[List[List]], List[List[List]], List] Списки токенов в списках текстов в списках доменов
         dataset_samples, dataset_labels = self.load_dir(self._path_to_files)
         domains = ['']
         return dataset_samples, dataset_labels, domains  # mode = 'flat' Tuple[List[List], List[List], ['']] Списки токенов в списках текстов

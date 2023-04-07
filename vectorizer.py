@@ -54,7 +54,7 @@ class Vectorizer:
         """
         Доолняет список значениями до необходимой длины
         :param input: Список
-        :param padding: Значение, которым дополнется список
+        :param padding: Значение, которым дополняется список
         :param max_length: Длина, до которой нужно дополнить список
         :return: Дополненный список
         """
@@ -67,7 +67,7 @@ class Vectorizer:
     def _tokenize(self, text: List[str], token_labels: List[str], max_length) -> Tuple[List[str], List[int], List[str]]:
         """
         Денение текста на bpe-токены и векторизация
-        :param text: Текст (спсиок токенов)
+        :param text: Текст (список токенов)
         :param token_labels: Тэги для токенов в тексте
         :param max_length: Максимальное число bpe-токенов в векторизованном тексте (остальные обрезается)
         :return: ``tokenized_text``: Текст, разделенный на bpe-токены,

@@ -2,11 +2,12 @@ import os
 import re
 import numpy as np
 import pandas as pd
+from itertools import chain
 from collections import OrderedDict
 from typing import List, Tuple
-from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, balanced_accuracy_score
+#from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, balanced_accuracy_score
 
-from utils import ASPECTS_LIST, tag2class, class2tag, paths
+from utils import ASPECTS_LIST, paths
 
 
 class Evaluator:
@@ -17,7 +18,6 @@ class Evaluator:
         """
         self.class2tag = dict(enumerate(ASPECTS_LIST + ['O']))
         self.tag2class = dict(zip(self.class2tag.values(), self.class2tag.keys()))
-        self.flatten = lambda nested_list: [item for nest in nested_list for item in nest]
         self.predicted_labels = self.vectorize_labels(predicted_labels)
         self.true_labels = self.vectorize_labels(true_labels)
         self.num_pattern = re.compile('\d*')
@@ -39,7 +39,7 @@ class Evaluator:
         :param labels: Список тэгов в строковом формате
         :return: Массив one-hot векторов
         """
-        return np.vstack([self.vectorize_label(label) for label in self.flatten(labels)])
+        return np.vstack([self.vectorize_label(label) for label in list(chain.from_iterable(labels))])
 
     def unvectorize_labels(self, labels:np.array) -> List[str]:
         """
@@ -94,23 +94,23 @@ class Evaluator:
     def count_metrics(self) -> np.array:
         """
         Построение массива с метриками
-        :return: Массив с метриками precision, recall, f1 и accuracy для каждого из тэгов + макро- и микроусреднения по всем тэгам
+        :return: Массив с метриками precision, recall, f1 и accuracy для каждого из тэгов + микро- и макроусреднения по всем тэгам
         """
         metrics = []
         for tag in self.class2tag.keys():
             metrics.append(self.count_metrics_for_tag(tag))
-        metrics.append(self.count_avg_metrics(average='macro'))
         metrics.append(self.count_avg_metrics(average='micro'))
+        metrics.append(self.count_avg_metrics(average='macro'))
         return np.vstack(metrics)
 
     def evaluate(self) -> pd.DataFrame:
         """
         Построение датафрейма с метриками
-        :return: Датафрейм с метриками precision, recall, f1 и accuracy для каждого из тэгов + макро- и микроусреднения по всем тэгам
+        :return: Датафрейм с метриками precision, recall, f1 и accuracy для каждого из тэгов + микро- и макроусреднения по всем тэгам
         """
         metrics = self.count_metrics()
         columns = ['Precision', 'Recall', 'F1', 'Accuracy']
-        index = list(self.tag2class.keys()) + ['Macro', 'Micro']
+        index = list(self.tag2class.keys()) + ['Micro', 'Macro']
         metrics_df = pd.DataFrame(metrics, columns=columns, index=index)
         metrics_df.columns.values[0] = 'Aspect'
         return metrics_df
@@ -137,11 +137,11 @@ class Evaluator:
         print(f'Metrics saved to {path}')
         return metrics_df
 
-    def make_label_chains(self, aspect_mask:List[str]) -> List[Tuple[str, List[str]]]:
+    def make_label_chains(self, aspect_mask:np.array) -> List[Tuple[int, int]]:
         """
-        Составление цепочек аспектов. Вспомогательная функция для вычисления точности полного совпадения аспектов.
-        :param labels: Список тэгов
-        :return: Список извлеченных цепочек аспектов. Пример цепочки: ('Method', ['Method_0', 'Method_1', 'Method_2'])
+        Составление цепочек, относящихся к заданному аспекту. Вспомогательная функция для вычисления точности полного совпадения аспектов.
+        :param aspect_mask: Маска аспекта: массив, где i-ое значение равно 1, если i-ый токен относится к данному аспекту.
+        :return: Список извлеченных цепочек аспектов.Цепочка имеет вид [индекс начала аспекта, индекс конца аспекта]
         """
         sparse_aspect_mask = np.arange(len(aspect_mask))[aspect_mask == 1]
         chains = []
@@ -158,6 +158,10 @@ class Evaluator:
         return chains
 
     def exact_match_accuracy(self)-> OrderedDict:
+        """
+        Вычисление точности полного совпадения аспектов
+        :return: Датафрейм с точностями полного совпадения для каждого аспекта + микро- и макроусреднения по всем тэгам
+        """
         total_intersection, total_true_chains = 0, 0
         ema_dict = OrderedDict()
         for tag_idx, tag in self.class2tag.items():
