@@ -14,7 +14,7 @@ class Vectorizer:
         self.model_name = model_name
         with open('models.json', 'r', encoding='UTF-8') as js:
             models = json.load(js)
-            model_config = models[model_name]
+            model_config = models[self.model_name]
         tokenizer_class = getattr(import_module('transformers'), model_config['tokenizer_class'])
         self._tokenizer = tokenizer_class.from_pretrained(model_config["pretrained_model_name"], do_lower_case=False)
         self._tag2class = tag2class
@@ -23,14 +23,14 @@ class Vectorizer:
     def vectorize(self, text: List[str], token_labels: List[str], max_length: int = None) -> Tuple[
         List[str], List[int], List[int], List[int]]:
         """
-        Векторизация текста и меток классов токенов в тексте
+        Векторизация текста и тэгов токенов в тексте
         :param text: Текст (список токенов)
-        :param token_labels: Список меток классов для токенов из текста
+        :param token_labels: Список тэгов для токенов из текста
         :param max_length: Максимальное число bpe-токенов в векторизованном тексте (остальные обрезается)
         :return:   ``tokenized_text``: Текст, разделенный на bpe-токены,
                    ``input_ids``: Вектор текста,
                    ``input_masks``: Маска для текста,
-                   ``tags``: One-hot-encoded метки классов для токенов в тексте
+                   ``tags``: One-hot-encoded тэги для токенов в тексте
         """
         if not max_length:
             max_length = self._max_length
@@ -68,11 +68,11 @@ class Vectorizer:
         """
         Денение текста на bpe-токены и векторизация
         :param text: Текст (спсиок токенов)
-        :param token_labels: Метки классов для токенов в тексте
+        :param token_labels: Тэги для токенов в тексте
         :param max_length: Максимальное число bpe-токенов в векторизованном тексте (остальные обрезается)
         :return: ``tokenized_text``: Текст, разделенный на bpe-токены,
                  ``input_masks``: Маска для текста,
-                 ``labels``:  Метки классов для bpe-токенов в тексте
+                 ``labels``:  Тэги для bpe-токенов в тексте
         """
         tokenized_text = []
         labels = []

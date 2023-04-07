@@ -18,8 +18,8 @@ class DataLoader:
     def process_label(self, label: str) -> str:
         """
         Удаление аспектов, которые есть в датасете, но не участвуют в экспериментах
-        :param label: Метка класса из датасета
-        :return: Мета класса, состоящая только из тех аспектов, которые участвуют в экспериментах
+        :param label: Тэг из датасета
+        :return: Тэг, состоящий только из тех аспектов, которые участвуют в экспериментах
         """
         tags = label.split('|')
         processed_label = [tag for tag in tags if tag in ASPECTS_LIST]
@@ -32,7 +32,8 @@ class DataLoader:
         """
           Загрузка одного файла с тектом. Если текст содержит большее заданного числа токенов, он делится на несколько частей.
           :param file_path: Путь к файлу
-          :return: Части текста и метки классов
+          :return: ``text_parts``:Части текста  (спсики токенов),
+                   ``text_part_labels``: Тэги для токенов в частях текста
           """
         with open(file_path, 'r', encoding='utf-8') as f:
             text_parts, text_part_labels = [], []
@@ -61,7 +62,8 @@ class DataLoader:
         """
           Загрузка текстов из одной папки.
           :param dir_path: Путь к папке
-          :return: Тексты и метки классов
+          :return: ``samples``:Тексты  (спсики токенов),
+                   ``labels``: Тэги для токенов в текстах
           """
         samples = []
         labels = []
@@ -79,10 +81,12 @@ class DataLoader:
         """
         Загрузка датасета
         :param mode: {'flat', 'cross_domain_flat','cross_domain'}
-            ``'flat'``: Тексты загружаются из одной папки
-            ``'cross_domain_flat'``: Тексты загружаются из разых папок, но сохраняются в одном списке
-            ``'cross_domain'``: Тексты загружаются из разых папок и сохраняются в разных списках
-        :return: Тексты, метки классов и список доменов
+            ``flat``: Тексты загружаются из одной папки
+            ``cross_domain_flat``: Тексты загружаются из разых папок, но сохраняются в одном списке
+            ``cross_domain``: Тексты загружаются из разых папок и сохраняются в разных списках
+        :return: ``dataset_samples``: Тексты,
+                ``dataset_labels``: Тэги для токенов в текстах
+                ``domains``: Список доменов
         """
         if mode.startswith('cross_domain'):
             dataset_samples = []

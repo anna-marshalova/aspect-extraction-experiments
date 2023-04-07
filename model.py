@@ -10,6 +10,12 @@ from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, num_labels
 
 
 def get_model(model_name:str, num_labels:int=num_labels):
+    """
+    Создание модели
+    :param model_name: Название модели
+    :param num_labels: Число классов
+    :return: Модель
+    """
     with open('models.json', 'r', encoding='UTF-8') as js:
         models = json.load(js)
         model_config = models[model_name]
@@ -18,11 +24,11 @@ def get_model(model_name:str, num_labels:int=num_labels):
 
     if model_config['model_class'].endswith("ForTokenClassification"):
         config = config_class.from_pretrained(model_config["pretrained_model_name"], num_labels=num_labels)
-        model = model_class.from_pretrained(model_config["pretrained_model_name"], config=config, **model_config['config'])
+        model = model_class.from_pretrained(model_config["pretrained_model_name"], config=config, **model_config["model_config"])
         model.layers[-1].activation = sigmoid
 
     elif model_config['model_class'].endswith("Model"):
-        transformer_model = model_class.from_pretrained(model_config["pretrained_model_name"], model_config["config"])
+        transformer_model = model_class.from_pretrained(model_config["pretrained_model_name"], model_config["model_config"])
         input_ids_in = Input(shape=(MAX_LENGTH,), name='input_token', dtype='int32')
         input_masks_in = Input(shape=(MAX_LENGTH,), name='masked_token', dtype='int32')
         if "frozen" in model_name:

@@ -4,8 +4,11 @@
     "config_class": "BertConfig",
     "model_class": "TFBertForTokenClassification",
     "tokenizer_class": "TFBertTokenizer",
-    "config": {
+    "model_config": {
       "from_pt": false
+    },
+    "tokenizer_config": {
+      "do_lower_case": false
     },
     "learning_rate": 1e-5
   },
@@ -14,7 +17,7 @@
     "config_class": "BertConfig",
     "model_class": "TFBertForTokenClassification",
     "tokenizer_class": "TFBertTokenizer",
-    "config": {
+    "model_config": {
       "from_pt": true
     },
     "learning_rate": 1e-5
@@ -24,7 +27,7 @@
     "config_class": "BertConfig",
     "model_class": "TFBertForTokenClassification",
     "tokenizer_class": "TFBertTokenizer",
-    "config": {
+    "model_config": {
       "from_pt": true
     },
     "learning_rate": 1e-5
@@ -34,7 +37,7 @@
     "config_class": "RobertaConfig",
     "model_class": "TFRobertaForTokenClassification",
     "tokenizer_class": "TFRobertaTokenizer",
-    "config": {
+    "model_config": {
       "from_pt": true
     },
     "learning_rate": 1e-5
@@ -44,7 +47,7 @@
     "config_class": "BertConfig",
     "model_class": "TFBertModel",
     "tokenizer_class": "TFBertTokenizer",
-    "config": {
+    "model_config": {
       "from_pt": false, "dropout_rate":0.1
     },
     "learning_rate": 1e-5
@@ -54,7 +57,7 @@
     "config_class": "BertConfig",
     "model_class": "TFBertModel",
     "tokenizer_class": "TFBertTokenizer",
-    "config": {
+    "model_config": {
       "from_pt": false, "dropout_rate":0.1, "LSTM_size": 50
     },
     "learning_rate": 1e-3
@@ -64,7 +67,7 @@
     "config_class": "BertConfig",
     "model_class": "TFBertModel",
     "tokenizer_class": "TFBertTokenizer",
-    "config": {
+    "model_config": {
       "from_pt": false, "dropout_rate":0.1, "LSTM_size": 50
     },
     "learning_rate": 1e-5
