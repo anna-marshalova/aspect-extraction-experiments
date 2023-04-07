@@ -1,6 +1,6 @@
 # Automatic aspect extraction from scientific texts in Russian
 
-- This project is part of the [TERMinator(Tool for Information extraction from Russian texts)](https://github.com/iis-research-team/terminator).
+- This project is part of the [TERMinator (Tool for Information extraction from Russian texts)](https://github.com/iis-research-team/terminator).
 - [Here](https://github.com/iis-research-team/ruserrc-dataset/tree/master/ruserrc_aspects) you can find the dataset, on which the models were trained.
 
 If you find this repository useful, feel free to cite this paper:
