@@ -17,7 +17,6 @@ from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, RANDOM_STATE, paths, t
 from model import get_model
 from vectorizer import Vectorizer
 
-#TODO: comments
 class Trainer:
     """Класс для обучения модели"""
     def __init__(self, samples:Tuple[List[str],List[str]], model_name:str, experiment_name:str, weights_dir:str=paths['weights'], load_weights:bool=False,

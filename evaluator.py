@@ -21,7 +21,6 @@ class Evaluator:
         self.tag2class = dict(zip(self.class2tag.values(), self.class2tag.keys()))
         self.predicted_labels = self.vectorize_labels(predicted_labels)
         self.true_labels = self.vectorize_labels(true_labels)
-        self.num_pattern = re.compile('\d*')
 
     def vectorize_label(self, label:str) -> np.array:
         """
@@ -57,9 +56,13 @@ class Evaluator:
         """
         confusion = self.true_labels + (self.predicted_labels * 2)
         confusion_matrix = np.vstack((
+            # true positive: true = 1 & pred = 1 => true+2*pred = 1+2*1 = 3
             np.count_nonzero(confusion == 3, axis=0),
+            # false positive: true = 0 & pred = 1 => true+2*pred = 0+2*1 = 2
             np.count_nonzero(confusion == 2, axis=0),
+            # false negative: true = 1 & pred = 0 => true+2*pred = 1+2*0 = 1
             np.count_nonzero(confusion == 1, axis=0),
+            # true negative: true = 0 & pred = 0 => true+2*pred = 0+2*0 = 0
             np.count_nonzero(confusion == 0, axis=0)
         ))
         return confusion_matrix
@@ -144,12 +147,15 @@ class Evaluator:
         :param aspect_mask: Маска аспекта: массив, где i-ое значение равно 1, если i-ый токен относится к данному аспекту.
         :return: Список извлеченных цепочек аспектов.Цепочка имеет вид [индекс начала аспекта, индекс конца аспекта]
         """
+        # из маски получаем индексы токенов, относящихся к данному аспекту
         sparse_aspect_mask = np.arange(len(aspect_mask))[aspect_mask == 1]
         chains = []
         start, end = sparse_aspect_mask[0], sparse_aspect_mask[0]
         for value in sparse_aspect_mask:
+            # если между индексами нет разрыва (например, 0 1 2 3), значит аспект продолжается
             if value - end <= 1:
                 end = value
+            # если между индексами есть разрыв (например, 0 1 2 3 10), значит аспект закончился. записываем границы в список
             else:
                 chains.append(tuple([start, end]))
                 start = value
@@ -160,7 +166,8 @@ class Evaluator:
 
     def exact_match_accuracy(self)-> OrderedDict:
         """
-        Вычисление точности полного совпадения аспектов
+        Вычисление точности полного совпадения аспектов: число полностью правильно извлеченных аспектов/число аспектов в тестовых данных
+        Если хотя бы одно слово не вошло в аспект, или, наоборот, вошло лишнее, аспект считается извлеченным неправильно
         :return: Датафрейм с точностями полного совпадения для каждого аспекта + микро- и макроусреднения по всем тэгам
         """
         total_intersection, total_true_chains = 0, 0
@@ -168,7 +175,9 @@ class Evaluator:
         for tag_idx, tag in self.class2tag.items():
                 true_chains = set(self.make_label_chains(self.true_labels[:, tag_idx]))
                 pred_chains = set(self.make_label_chains(self.predicted_labels[:, tag_idx]))
+                # число правильно извлеченных аспектов
                 intersection = len(true_chains&pred_chains)
+                # число аспектов в тестовых данных
                 num_true_chains = len(true_chains)
                 total_intersection += intersection
                 total_true_chains += num_true_chains
