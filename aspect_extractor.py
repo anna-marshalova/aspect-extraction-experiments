@@ -1,3 +1,5 @@
+import os
+from tqdm.autonotebook import tqdm
 from typing import List, Set, Union, Dict
 from collections import defaultdict
 import pymorphy2
@@ -5,6 +7,7 @@ import spacy
 from spacy.tokens.token import Token
 from spacy.tokens.doc import Doc
 
+from utils import paths
 from predictor import Predictor
 
 class AspectExtractor:
@@ -178,9 +181,12 @@ class AspectExtractor:
         return {aspect: [self.__process(mention) for mention in mentions] for aspect, mentions in
                 extracted_aspects.items()}
 
-    def print_extracted_aspects(self, extracted_aspects:Dict[str,List[str]]):
+    def stringify_extracted_aspects(self, text:Union[List[str],str]=None, extracted_aspects:Dict[str,List[str]]=None) -> str:
         """
-        Вывод извлеченных аспектов на экра.
+        Преобразование словаря извлеченных аспектов в строку
+        :param text: Тексты (токенизированные или нет)
+        :param extracted_aspects: Словарь, где ключи - аспекты, значения - списки упоминаний каждого из аспектов
+        :return: Строка, содержащая извлеченные аспекты
         Пример:
         МЕТОДЫ
         1. Лагранжев бессеточный метод сглаженных частиц (SPH)
@@ -189,11 +195,36 @@ class AspectExtractor:
         1. Перечислены различные свойства этих подходов и их влияние
         :param extracted_aspects: Словарь извлеченных аспектов, где ключи - аспекты, значения - списки упоминаний каждого из аспектов
         """
+        assert text or extracted_aspects, 'Either text or dict of extracted aspects should be provided'
+        if not extracted_aspects:
+            extracted_aspects = self.extract_aspects(text)
+        aspects_string = ''
         for aspect, mentions in extracted_aspects.items():
+            # если аспект один, записываем название в ед.ч.
             if len(mentions) == 1:
                 aspect_name_ru = self._TRANSLATIONS[aspect][0]
+            # если аспектов несколько, записываем название в мн.ч.
             else:
                 aspect_name_ru = self._TRANSLATIONS[aspect][1]
-            print(aspect_name_ru.upper())
+            aspects_string += f'{aspect_name_ru.upper()}\n'
             for i, mention in enumerate(mentions):
-                print(f'{i + 1}. {mention}')
+                aspects_string += f'{i + 1}. {mention}\n'
+        return aspects_string
+
+    def save_extracted_aspects(self, texts:List[Union[List[str],str]], annot_dir: str = paths['examples'],
+                     filename: str = 'test_auto_annotated.csv'):
+        """
+        Сохранение извлеченных аспектов в файл
+        :param texts: Тексты (токенизированные или нет)
+        :param annot_dir: Путь к папке для сохранения результата
+        :param filename: Имя файла для сохранения результата
+        """
+        path = os.path.join(annot_dir, filename)
+        if not os.path.exists(annot_dir):
+            os.makedirs(annot_dir, exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as file:
+            for text_idx, text in enumerate(tqdm(texts)):
+                aspects_string = self.stringify_extracted_aspects(text=text)
+                file.write(f'Текст №{text_idx + 1}')
+                file.write(aspects_string)
+                file.write('\n')

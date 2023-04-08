@@ -6,7 +6,7 @@ from collections import OrderedDict
 from typing import List, Tuple
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, balanced_accuracy_score
 
-from utils import ASPECTS_LIST, paths
+from utils import get_aspect_list, paths
 
 
 class Evaluator:
@@ -135,6 +135,8 @@ class Evaluator:
         :param results_dir: Папка для сохранения
         :return: Датафрейм с метриками precision, recall, f1 и accuracy для каждого из тэгов + микро- и макроусреднения по всем тэгам
         """
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir, exist_ok=True)
         metrics_df = self.evaluate()
         path = os.path.join(results_dir, f'{experiment_name}.csv')
         metrics_df.to_csv(path)

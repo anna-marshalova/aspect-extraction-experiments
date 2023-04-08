@@ -46,9 +46,11 @@ class CrossDomainPipeline:
         :return: Данные, разделенные на обучающие и тестовые
         """
         text_samples, labels = samples
+        # выбираем тестовый фолд из выборки
         num_test_domain = self._domains.index(self._test_domain)
         test_samples = text_samples[num_test_domain]
         test_labels = labels[num_test_domain]
+        # все остальные фолды объединяем в трейн
         train_samples = list(chain.from_iterable(text_samples[:num_test_domain])) + list(
             chain.from_iterable(text_samples[num_test_domain + 1:]))
         train_labels = list(chain.from_iterable(labels[:num_test_domain])) + list(

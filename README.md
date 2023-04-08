@@ -32,6 +32,7 @@ Abother wxample of automatic annotation (`extractor.print_extracted_aspects`)
 - `utils.py`: contains some constants, variables and functions 
 - `models.json`: contains configs for different models
 - `train_config.json`: contains training configurations
+- `cross-domain-pipeline.json`: used for cross-domain experiments
 
 ## Citation:
 If you find this repository useful, feel free to cite this paper:

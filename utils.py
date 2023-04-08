@@ -4,7 +4,9 @@ from typing import List, Tuple
 from nltk.tokenize import wordpunct_tokenize
 
 ASPECTS_LIST = ['Task', 'Contrib', 'Method', 'Conc']
-DOMAINS = ['biology_medicine', 'computer_science', 'history_philology', 'journalism', 'law', 'linguistics', 'math', 'pedagogy', 'physics', 'psychology']
+# ASPECTS_LIST = ['Contrib',  'Conc']
+DOMAINS = ['biology_medicine', 'computer_science', 'history_philology', 'journalism', 'law', 'linguistics', 'math',
+           'pedagogy', 'physics', 'psychology']
 RANDOM_STATE = 42
 ROOT = '/content/drive/MyDrive/Маршалова Аня'
 MAX_LENGTH_FOR_TOKENIZER = 200
@@ -12,10 +14,10 @@ paths = {'data': os.path.join(ROOT, 'датасеты', 'cross_domain_bio_aspect
          'weights': os.path.join(ROOT, 'weights', 'AspectsWeights'),
          'results': os.path.join(ROOT, 'experiment_results', 'cross_domain'),
          'examples': os.path.join(ROOT, 'experiment_results', 'cross_domain', 'examples'),
-         'cross_domain_weights':os.path.join(ROOT,'weights','AspectsWeights','cross_domain'),
+         'cross_domain_weights': os.path.join(ROOT, 'weights', 'AspectsWeights', 'cross_domain'),
          'cross_domain_results': os.path.join(ROOT, 'experiment_results', 'cross_domain', 'cross_domain'),
-         'model_config':'models.json',
-         'train_config':'train_config.json'}
+         'model_config': 'models.json',
+         'train_config': 'train_config.json'}
 class2tag = dict(enumerate(ASPECTS_LIST))
 tag2class = dict(zip(class2tag.values(), class2tag.keys()))
 num_labels = len(tag2class.keys())
@@ -54,10 +56,11 @@ def tokenize(text: str) -> List[str]:
             validated_tokens.append(token)
     return validated_tokens
 
-def count_labels(labels:List[str]) -> Counter:
-  """Подсчет количества каждого тэга в разметке"""
-  counter=Counter()
-  for text in labels:
-    for label in text:
-      counter[label]+=1
-  return counter
+
+def count_labels(labels: List[str]) -> Counter:
+    """Подсчет количества каждого тэга в разметке"""
+    counter = Counter()
+    for text in labels:
+        for label in text:
+            counter[label] += 1
+    return counter

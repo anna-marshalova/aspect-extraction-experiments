@@ -3,7 +3,7 @@ import csv
 from typing import List, Union
 from tqdm.autonotebook import tqdm
 from IPython.display import HTML, display_html
-from utils import ROOT, paths
+from utils import paths
 from predictor import Predictor
 
 
@@ -90,7 +90,9 @@ class TagAnnotator:
         :param filename: Имя файла, в которой сохранится разметка
         """
         fields = ['id', 'text']
-        path = os.path.join(ROOT, annot_dir, filename)
+        path = os.path.join(annot_dir, filename)
+        if not os.path.exists(annot_dir):
+            os.makedirs(annot_dir, exist_ok=True)
         with open(path, 'w', encoding='utf-8') as file:
             writer = csv.DictWriter(file, fieldnames=fields)
             writer.writeheader()
