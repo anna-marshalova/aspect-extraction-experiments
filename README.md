@@ -7,7 +7,7 @@ If you find this repository useful, feel free to cite this paper:
 `Marshalova A.E., Bruches E.P., Batura T.V. [Aspect extraction from scientific paper texts](http://swsys.ru/files/2022-4/698-706.pdf). Software
 & Systems, 2022, vol. 35, no. 4, pp. 698–706 (in Russ.). DOI: 10.15827/0236-235X.140.698-706.`
 
-Module description:
+## Module description:
 - `data_loader.py`: loads dataset from csv-files 
 - `model.py`: creates a model
 - `vectorizer.py`: vectorizes texts and labels
