@@ -12,7 +12,7 @@ class TagAnnotator:
 
     def __init__(self, predictor: Predictor):
         """
-        :param predictor: Класс для получения предсказаний модели
+        :param predictor: Объект класса для получения предсказаний модели
         """
         self.predictor = predictor
         #цвета, которыми будут выделяться аспекты
@@ -59,14 +59,12 @@ class TagAnnotator:
                 text_with_tags.append(cur_token)
         return ' '.join(text_with_tags)
 
-    def annotate_with_colors(self, text: Union[List[str], str], padding: str = '20px', width: str = '50%',
-                             labels: List[str] = None) -> str:
+    def annotate_with_colors(self, text: Union[List[str], str], padding: str = '20px', width: str = '50%', **kwargs) -> str:
         """
         Создание HTML разметка в формате строки, в которой каждый аспект выделен определенным цветом
         :param text: Текст (токенизированный или нет)
         :param padding: Размер отступов между элементами легенды в html
         :param width: Ширина страницы с разметкой
-        :param labels: Список тэгов (нужен, например, для выполнения разметки известными тэгами из датасета)
         :return: HTML разметка в формате строки.
         Содержит текст, в котором каждый аспект выделен определенным цветом и легенду, позволяющую понять, каким цветом обозначается каждый аспект.
         """
@@ -75,28 +73,24 @@ class TagAnnotator:
         html = f'<style>{css_body} {self._css_aspects} </style> <div id="legend-wrapper"> {self._html_legend} </div> <div>{annot}</div>'
         return html
 
-    def display_annotation_with_color(self, text: Union[List[str], str], padding: str = '20px', width: str = '50%',
-                                      labels: List[str] = None):
+    def display_annotation_with_color(self, text: Union[List[str], str], **kwargs):
         """
         Вывод на экран текста, в котором каждый аспект выделен определенным цветом
         :param text: Текст (токенизированный или нет)
-        :param padding: Размер отступов между элементами легенды в html
-        :param width: Ширина страницы с разметкой
-        :param labels: Список тэгов (нужен, например, для выполнения разметки известными тэгами из датасета)
         """
-        html = self.annotate_with_colors(text, padding=padding, width=width, labels=labels)
+        html = self.annotate_with_colors(text, **kwargs)
         display_html(HTML(html))
 
-    def annotate_csv(self, texts: List[Union[List[str], str]], dir_path: str = paths['examples'],
+    def annotate_csv(self, texts: List[Union[List[str], str]], annot_dir: str = paths['examples'],
                      filename: str = 'test_auto_annotated.csv'):
         """
         Разметка текстов тэгами аспектов и запись разметки в таблицу в формате csv
         :param texts: Тексты (токенизированные или нет)
-        :param dir_path: Путь к папке для сохранения разметки
+        :param annot_dir: Путь к папке для сохранения разметки
         :param filename: Имя файла, в которой сохранится разметка
         """
         fields = ['id', 'text']
-        path = os.path.join(ROOT, dir_path, filename)
+        path = os.path.join(ROOT, annot_dir, filename)
         with open(path, 'w', encoding='utf-8') as file:
             writer = csv.DictWriter(file, fieldnames=fields)
             writer.writeheader()

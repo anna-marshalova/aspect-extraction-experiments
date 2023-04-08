@@ -1,12 +1,12 @@
 import json
 from importlib import import_module
 
-from tf.keras import Model
+from tensorflow.keras import Model
 from tensorflow.keras.activations import sigmoid
 from tensorflow.keras.layers import TimeDistributed, Dense, Dropout, Bidirectional, LSTM, Input
 from tensorflow_addons.layers import CRF
 
-from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, num_labels
+from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, paths, num_labels
 
 
 def get_model(model_name:str, num_labels:int=num_labels):
@@ -16,11 +16,11 @@ def get_model(model_name:str, num_labels:int=num_labels):
     :param num_labels: Число классов
     :return: Модель
     """
-    with open('models.json', 'r', encoding='UTF-8') as js:
+    with open(paths['model_config'], 'r', encoding='UTF-8') as js:
         models = json.load(js)
         model_config = models[model_name]
     model_class = getattr(import_module('transformers'), model_config['model_class'])
-    config_class = getattr(import_module('transformers'), model_config['model_config'])
+    config_class = getattr(import_module('transformers'), model_config['config_class'])
 
     if model_config['model_class'].endswith("ForTokenClassification"):
         config = config_class.from_pretrained(model_config["pretrained_model_name"], num_labels=num_labels)

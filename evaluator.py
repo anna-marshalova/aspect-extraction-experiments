@@ -1,5 +1,4 @@
 import os
-import re
 import numpy as np
 import pandas as pd
 from itertools import chain
@@ -12,7 +11,7 @@ from utils import ASPECTS_LIST, paths
 
 class Evaluator:
     """Класс для оценки модели"""
-    def __init__(self, predicted_labels:List[str], true_labels:List[str]):
+    def __init__(self, predicted_labels:List[List[str]], true_labels:List[List[str]]):
         """
         :param predicted_labels: Список предсканных тэгов
         :param true_labels: Список истинных тэгов
@@ -107,7 +106,7 @@ class Evaluator:
         metrics.append(self.count_avg_metrics(average='macro'))
         return np.vstack(metrics)
 
-    def evaluate(self) -> pd.DataFrame:
+    def evaluate(self, **kwargs) -> pd.DataFrame:
         """
         Построение датафрейма с метриками
         :return: Датафрейм с метриками precision, recall, f1 и accuracy для каждого из тэгов + микро- и макроусреднения по всем тэгам
@@ -129,14 +128,15 @@ class Evaluator:
         confusion_matrix_df = pd.DataFrame(confusion_matrix, columns=columns, index=self._tag2class.keys())
         return confusion_matrix_df
 
-    def save_metrcis(self, experiment_name:str, dir_path=paths['results']):
+    def save_metrcis(self, experiment_name:str, results_dir=paths['results'], **kwargs):
         """
         Сохранение метрик в файл
         :param experiment_name: Название эксперимента
-        :param dir_path: Папка для сохранения
+        :param results_dir: Папка для сохранения
+        :return: Датафрейм с метриками precision, recall, f1 и accuracy для каждого из тэгов + микро- и макроусреднения по всем тэгам
         """
         metrics_df = self.evaluate()
-        path = os.path.join(dir_path, f'{experiment_name}.csv')
+        path = os.path.join(results_dir, f'{experiment_name}.csv')
         metrics_df.to_csv(path)
         print(f'Metrics saved to {path}')
         return metrics_df

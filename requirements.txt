@@ -1,0 +1,12 @@
+pip setuptools wheel
+nltk==3.6.5
+numpy
+pandas==1.5.3
+pymorphy2==0.9.1
+scikit_learn==1.2.2
+spacy==3.5.0
+tensorflow==2.12.0
+tensorflow_addons==0.20.0
+tqdm==4.62.3
+transformers==4.27.4
+ru-core-news-lg @ https://github.com/explosion/spacy-models/releases/download/ru_core_news_lg-3.5.0/ru_core_news_lg-3.5.0-py3-none-any.whl

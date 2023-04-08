@@ -1,17 +1,14 @@
 import os
-import sys
 import json
 import numpy as np
+from importlib import import_module
 from typing import List, Tuple, Generator
 from sklearn.model_selection import train_test_split
 
-import tensorflow as tf
 from tensorflow.keras.optimizers.schedules import ExponentialDecay
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler, History
 from tensorflow.keras.metrics import CategoricalAccuracy
-from tensorflow.keras.losses import CategoricalCrossentropy
-from tensorflow_addons import SigmoidFocalCrossEntropy
 
 from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, RANDOM_STATE, paths, tag2class, sort_dataset
 from model import get_model
@@ -19,7 +16,7 @@ from vectorizer import Vectorizer
 
 class Trainer:
     """Класс для обучения модели"""
-    def __init__(self, samples:Tuple[List[str],List[str]], model_name:str, experiment_name:str, weights_dir:str=paths['weights'], load_weights:bool=False, model=None):
+    def __init__(self, samples:Tuple[List[List[str]],List[List[str]]], model_name:str, experiment_name:str, weights_dir:str=paths['weights'], load_weights:bool=False, model=None):
         """
         :param samples: Кортеж, в котором первый элемент список текстов, второй - список тэгов
         :param model_name: Название модели
@@ -35,7 +32,6 @@ class Trainer:
             self._model = get_model(model_name)
         self._model_name = model_name
         self._vectorizer = Vectorizer(self._model_name)
-        self._get_model_config(model_name)
         self._get_train_config()
         
         self._weights_dir = weights_dir
@@ -57,18 +53,21 @@ class Trainer:
 
         self._num_of_train_samples = self._steps_per_epoch * self._batch_size
         self._num_of_val_samples = self._validation_steps * self._batch_size
+
+        self._get_model_config()
         
-    
+    def get_model(self):
+        return self._model
     def _get_model_config(self):
         with open(paths['model_config'], 'r', encoding='UTF-8') as js:
             models = json.load(js)
             self._model_config = models[self._model_name]
         
         self._learning_rate = self._model_config['learning_rate']
-        self._optimizer = Adam(learning_rate=self._schedule)
-        self._loss = getattr(sys.modules[__name__], self._model_config["loss"])
         self._schedule = ExponentialDecay(initial_learning_rate=self._learning_rate,
                                          decay_steps=2 * self._steps_per_epoch, decay_rate=0.9)
+        self._optimizer = Adam(learning_rate=self._schedule)
+        self._loss = getattr(import_module('tensorflow.keras.losses'), self._model_config["loss"])()
     
     def _get_train_config(self):
         with open(paths['train_config'], 'r', encoding='UTF-8') as js:
@@ -110,10 +109,10 @@ class Trainer:
             if i == num_of_samples:
                 i = 0
 
-    def train(self, save_weights:bool=True) -> tf.History:
+    def train(self, save_weights:bool=True) -> History:
         """
         Обучение модели
-        :param save_weights: Созранять ли веса на диск
+        :param save_weights: Сохранять ли веса на диск
         :return: История обучения для анализа и построения графиков
         """
         saver = ModelCheckpoint(self._path_to_weights, monitor='val_loss', verbose=1, save_best_only=True, mode='auto',

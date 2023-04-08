@@ -28,7 +28,7 @@ Abother wxample of automatic annotation (`extractor.print_extracted_aspects`)
 - `predictor.py`: extracts aspects from texts
 - `evaluator.py`: counts metrics for predictions
 - `tag annotator.py`: annotates texts with predicteg aspects
-- `extractor.py`: outputs extracted aspects and normalizes them
+- `aspect_extractor.py`: outputs extracted aspects and normalizes them
 - `utils.py`: contains some constants, variables and functions 
 - `models.json`: contains configs for different models
 - `train_config.json`: contains training configurations

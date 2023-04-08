@@ -61,20 +61,20 @@ class DataLoader:
                 text_part_labels.append(token_labels)
             return text_parts, text_part_labels
 
-    def load_dir(self, dir_path: str) -> Tuple[List[List], List[List]]:
+    def load_dir(self, data_dir: str) -> Tuple[List[List], List[List]]:
         """
           Загрузка текстов из одной папки.
-          :param dir_path: Путь к папке
+          :param data_dir: Путь к папке
           :return: ``samples``:Тексты  (списки токенов),
                    ``labels``: Тэги для токенов в текстах
           """
         samples = []
         labels = []
-        filenames = sorted(os.listdir(dir_path))
+        filenames = sorted(os.listdir(data_dir))
         for filename in filenames:
             if filename.startswith('.'):
                 continue
-            file_path = os.path.join(dir_path, filename)
+            file_path = os.path.join(data_dir, filename)
             text_parts, text_part_labels = self.process_file(file_path)
             samples.extend(text_parts)
             labels.extend(text_part_labels)
@@ -87,7 +87,7 @@ class DataLoader:
             ``flat``: Тексты загружаются из одной папки
             ``cross_domain_flat``: Тексты загружаются из разных папок, но сохраняются в одном списке
             ``cross_domain``: Тексты загружаются из разных папок и сохраняются в разных списках
-        :return: ``dataset_samples``: Тексты,
+        :return: ``dataset_samples``: Тексты
                 ``dataset_labels``: Тэги для токенов в текстах
                 ``domains``: Список доменов
         """

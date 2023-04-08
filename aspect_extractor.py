@@ -11,7 +11,7 @@ class AspectExtractor:
     """ Класс для извлечения аспектов как словосочетаний"""
     def __init__(self, predictor:Predictor, normalize:bool=True):
         """
-        :param predictor: Класс для получения предсказаний модели
+        :param predictor: Объект класса для получения предсказаний модели
         :param normalize: Ставить ли извлеченные аспекты в начальную форму
         """
         self._PAIRED_L2R = {'(': ')', '[': ']', '«': '»', '{': '}'}

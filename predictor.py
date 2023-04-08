@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 import numpy as np
@@ -13,21 +14,22 @@ from heuristic_validator import HeuristicValidator
 class Predictor:
     """Класс для получения предсказаний модели"""
 
-    def __init__(self, model_name:str, threshold:float=0.5, weights_path:str=None, model=None):
+    def __init__(self, model_name:str, threshold:float=0.5, weights_dir:str=paths['weights'], weights_filename:str='weights.h5', model=None):
         """
         :param threshold: Порог, по которому определяется принадлежность токена к аспекту
-        :param weights_path: Путь к весам модели
+        :param weights_dir: Путь к папке с весами модели
+        :param weights_filename: Название файла с весами модели
         :param model_name: Название модели
         :param model: Модель
         """
-        assert weights_path or model, 'Model or path to weights should be provided'
+        assert weights_filename or model, 'Model or path to weights should be provided'
         self._model_name = model_name
-        self.weights_path = weights_path
+        self.weights_path = os.path.join(weights_dir, weights_filename)
         if model:
             self._model = model
         else:
             self._model = get_model(model_name)
-            self._model.load_weights(weights_path)
+            self._model.load_weights(self.weights_path)
         self._get_model_config()
         self._vectorizer = Vectorizer(self._model_name)
         self._class2tag = class2tag
@@ -38,7 +40,7 @@ class Predictor:
         with open(paths['model_config'], 'r', encoding='UTF-8') as js:
             models = json.load(js)
             self._model_config = models[self._model_name]
-    def extract(self, text: Union[str, List[str]], use_heuristics:bool=True) -> List[Tuple[str, str]]:
+    def extract(self, text: Union[str, List[str]], use_heuristics:bool=True, **kwargs) -> List[Tuple[str, str]]:
         """ Извлечение аспектов из входного текста
         :param text: Входной текст, может быть строкой либо уже токенизированным (списком строк)
         :param use_heuristics: Применять ли к полученному результату эвристики

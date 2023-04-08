@@ -12,13 +12,13 @@ class Vectorizer:
         """
         :param model_name: Название модели
         """
-        self._get_tokenizer(model_name)
+        self._model_name = model_name
+        self._get_tokenizer()
         self._max_length = MAX_LENGTH
         self._tag2class = tag2class
 
-    def _get_tokenizer(self, model_name:str):
+    def _get_tokenizer(self):
         """Создание токенизатора"""
-        self._model_name = model_name
         with open(paths['model_config'], 'r', encoding='UTF-8') as js:
             models = json.load(js)
             self._model_config = models[self._model_name]
