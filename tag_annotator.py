@@ -16,11 +16,11 @@ class TagAnnotator:
         """
         self.predictor = predictor
         #цвета, которыми будут выделяться аспекты
-        self.ASPECT2COLOR = {'Task': '#A5C033', 'Contrib': '#DA95B8', 'Method': '#6EC4DB', 'Conc': '#F5B527'}
-        self.css_aspects = ' '.join(
-            [f'{aspect} {{background-color:{color}}}' for aspect, color in self.ASPECT2COLOR.items()])
-        self.html_legend = ' '.join(
-            [f'<{aspect} class="legend">{aspect}</{aspect}>' for aspect in self.ASPECT2COLOR.keys()])
+        self._ASPECT2COLOR = {'Task': '#A5C033', 'Contrib': '#DA95B8', 'Method': '#6EC4DB', 'Conc': '#F5B527'}
+        self._css_aspects = ' '.join(
+            [f'{aspect} {{background-color:{color}}}' for aspect, color in self._ASPECT2COLOR.items()])
+        self._html_legend = ' '.join(
+            [f'<{aspect} class="legend">{aspect}</{aspect}>' for aspect in self._ASPECT2COLOR.keys()])
 
     def annotate_with_tags(self, text: Union[List[str], str], labels: List[str] = None) -> str:
         """
@@ -28,9 +28,9 @@ class TagAnnotator:
         :param text: Текст (токенизированный или нет)
         :param labels: Список тэгов (нужен, например, для выполнения разметки известными тэгами из датасета)
         :return: Текст, размеченный тэгами аспектамов.
-        #TODO
         Пример: В статье <Contrib> предложен инструмент для <Task> распознавания речи </Task> </Contrib>. ...
         """
+        # TODO longer example
         text_with_tags = []
         prev_label = 'O'
         if labels:
@@ -72,7 +72,7 @@ class TagAnnotator:
         """
         css_body = f'body {{color:black; background-color:white;width:{width};padding:{padding};}} .legend {{padding: 2px;}} #legend-wrapper {{margin-bottom:10px;margin-top:10px}}'
         annot = self.annotate_with_tags(text, labels=labels).replace(' </', '</').replace('></', '> </')
-        html = f'<style>{css_body} {self.css_aspects} </style> <div id="legend-wrapper"> {self.html_legend} </div> <div>{annot}</div>'
+        html = f'<style>{css_body} {self._css_aspects} </style> <div id="legend-wrapper"> {self._html_legend} </div> <div>{annot}</div>'
         return html
 
     def display_annotation_with_color(self, text: Union[List[str], str], padding: str = '20px', width: str = '50%',

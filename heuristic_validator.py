@@ -79,7 +79,7 @@ class HeuristicValidator:
                 return True
         return False
 
-    def add_aspect(self, aspect: str, label: str) -> str:
+    def _add_aspect(self, aspect: str, label: str) -> str:
         """
         Добавление аспекта в тэг. Если тэг уже состоит из двух аспектов, то третий просто не добавляется
         :param aspect: Аспект, который нужно добавить
@@ -94,7 +94,7 @@ class HeuristicValidator:
             aspect_added = label
         return aspect_added
 
-    def delete_aspect(self, aspect: str, label: str) -> str:
+    def _delete_aspect(self, aspect: str, label: str) -> str:
         """
         Удаление аспекта из тэга
         :param aspect: Аспект, который нужно удалить
@@ -134,7 +134,7 @@ class HeuristicValidator:
             if 'Contrib' not in cur_label and 'Contrib' in next_label:
                 cur_parse = self._morph.parse(cur_token)
                 if self._isprts_pssv(cur_parse) or self._isverb_3per(cur_parse):
-                    contrib_added = self.add_aspect('Contrib', cur_label)
+                    contrib_added = self._add_aspect('Contrib', cur_label)
                     updated_result[i] = (cur_token, contrib_added)
         return [updated_result[i] for i in range(len(result))]
 
@@ -155,7 +155,7 @@ class HeuristicValidator:
                         cur_parse = self._morph.parse(cur_token)
                         if not self._istrue_pos(cur_parse, cur_token,
                                                 prev_token) and cur_token not in self.R_PAIRED_PUNCT:
-                            aspects_deleted = self.delete_aspect(aspect, aspects_deleted)
+                            aspects_deleted = self._delete_aspect(aspect, aspects_deleted)
                 updated_result[i] = (cur_token, aspects_deleted)
         return [updated_result[i] for i in range(len(result))]
 
@@ -177,7 +177,7 @@ class HeuristicValidator:
                                           cur_token) and cur_token not in self.L_PAIRED_PUNCT) or self._isconj_prcl(
                             cur_parse, cur_token, prev_token) or (
                                 self._isprep(cur_parse, cur_token, prev_token) and not self._islong(aspect)):
-                            aspects_deleted = self.delete_aspect(aspect, aspects_deleted)
+                            aspects_deleted = self._delete_aspect(aspect, aspects_deleted)
                 updated_result[i] = (cur_token, aspects_deleted)
         return [updated_result[i] for i in range(len(result))]
 
@@ -203,7 +203,7 @@ class HeuristicValidator:
                         cur_parse = self._morph.parse(cur_token)
                         # если аспект не может быть выражен одним словом или токен не является самостоятельной частью речи
                         if self._islong(aspect) or not self._istrue_pos(cur_parse, cur_token, prev_token):
-                            aspects_deleted = self.delete_aspect(aspect, aspects_deleted)
+                            aspects_deleted = self._delete_aspect(aspect, aspects_deleted)
                             updated_result[i] = (cur_token, aspects_deleted)
         return [updated_result[i] for i in range(len(result))]
 

@@ -9,7 +9,9 @@ MAX_LENGTH_FOR_TOKENIZER = 200
 paths = {'data': os.path.join(ROOT, 'датасеты', 'cross_domain_bio_aspects'),
          'weights': os.path.join(ROOT, 'weights', 'AspectsWeights'),
          'results': (ROOT, 'experiment_results', 'cross_domain'),
-         'examples': (ROOT, 'experiment_results', 'cross_domain', 'examples')}
+         'examples': (ROOT, 'experiment_results', 'cross_domain', 'examples'),
+         'model_config':'models.json',
+         'train_config':'train_config.json'}
 class2tag = dict(enumerate(ASPECTS_LIST))
 tag2class = dict(zip(class2tag.values(), class2tag.keys()))
 num_labels = len(tag2class.keys())

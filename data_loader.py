@@ -16,7 +16,7 @@ class DataLoader:
         self._path_to_files = path_to_files
         self._max_len = max_len
 
-    def process_label(self, label: str) -> str:
+    def _process_label(self, label: str) -> str:
         """
         Удаление аспектов, которые есть в датасете, но не участвуют в экспериментах
         :param label: Тэг из датасета
@@ -44,7 +44,7 @@ class DataLoader:
             reader = csv.DictReader(f)
             for row in reader:
                 sent.append(row['token'])
-                sent_labels.append(self.process_label(row['tag']))
+                sent_labels.append(self._process_label(row['tag']))
                 if row['token'] == '.':
                     # если с добавленным предложением текст не уместится в N=max_length токенов, переносим его в следующий семпл
                     if len(tokens) + len(sent) > self._max_len:

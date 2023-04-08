@@ -2,7 +2,7 @@ import json
 import numpy as np
 from importlib import import_module
 from typing import Tuple, List, Any
-from utils import ASPECTS_LIST, MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, tag2class, num_labels
+from utils import ASPECTS_LIST, MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, paths, tag2class, num_labels
 
 
 class Vectorizer:
@@ -12,14 +12,19 @@ class Vectorizer:
         """
         :param model_name: Название модели
         """
-        self.model_name = model_name
-        with open('models.json', 'r', encoding='UTF-8') as js:
-            models = json.load(js)
-            model_config = models[self.model_name]
-        tokenizer_class = getattr(import_module('transformers'), model_config['tokenizer_class'])
-        self._tokenizer = tokenizer_class.from_pretrained(model_config["pretrained_model_name"], do_lower_case=False)
-        self._tag2class = tag2class
+        self._get_tokenizer(model_name)
         self._max_length = MAX_LENGTH
+        self._tag2class = tag2class
+
+    def _get_tokenizer(self, model_name:str):
+        """Создание токенизатора"""
+        self._model_name = model_name
+        with open(paths['model_config'], 'r', encoding='UTF-8') as js:
+            models = json.load(js)
+            self._model_config = models[self._model_name]
+        tokenizer_class = getattr(import_module('transformers'), self._model_config['tokenizer_class'])
+        self._tokenizer = tokenizer_class.from_pretrained(self._model_config["pretrained_model_name"], do_lower_case=False)
+
 
     def vectorize(self, text: List[str], token_labels: List[str], max_length: int = None) -> Tuple[
         List[str], List[int], List[int], List[int]]:

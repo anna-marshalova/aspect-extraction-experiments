@@ -4,7 +4,7 @@ import numpy as np
 from collections import Counter, defaultdict
 from typing import Tuple, List, Union
 
-from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, class2tag, tokenize
+from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, paths, class2tag, tokenize
 from model import get_model
 from vectorizer import Vectorizer
 from heuristic_validator import HeuristicValidator
@@ -21,21 +21,23 @@ class Predictor:
         :param model: Модель
         """
         assert weights_path or model, 'Model or path to weights should be provided'
-        self.model_name = model_name
-        with open('models.json', 'r', encoding='UTF-8') as js:
-            models = json.load(js)
-            self.model_config = models[self.model_name]
+        self._model_name = model_name
         self.weights_path = weights_path
         if model:
             self._model = model
         else:
             self._model = get_model(model_name)
             self._model.load_weights(weights_path)
-        self._vectorizer = Vectorizer(self.model_name)
+        self._get_model_config()
+        self._vectorizer = Vectorizer(self._model_name)
         self._class2tag = class2tag
-        self.threshold = threshold
+        self._threshold = threshold
         self._heuristic_validator = HeuristicValidator()
 
+    def _get_model_config(self):
+        with open(paths['model_config'], 'r', encoding='UTF-8') as js:
+            models = json.load(js)
+            self._model_config = models[self._model_name]
     def extract(self, text: Union[str, List[str]], use_heuristics:bool=True) -> List[Tuple[str, str]]:
         """ Извлечение аспектов из входного текста
         :param text: Входной текст, может быть строкой либо уже токенизированным (списком строк)
@@ -63,7 +65,7 @@ class Predictor:
 
             bpe_tokens, input_ids, input_masks, tags = self._vectorizer.vectorize(tokens[start: end], labels[start: end], max_length=MAX_LENGTH)
             preds = self._model.predict([np.array([input_ids]), np.array([input_masks])], verbose=False)[0]
-            if self.model_config['model_class'].endswith("ForTokenClassification"): #у разных моделей разный формат выходов
+            if self._model_config['model_class'].endswith("ForTokenClassification"): #у разных моделей разный формат выходов
                 preds = preds[0]
             all_bpe_tokens.extend(bpe_tokens)
             all_predictions.extend(preds[:len(bpe_tokens)])
@@ -148,7 +150,7 @@ class Predictor:
         self._process_token(result, tags, token)
         return result
 
-    def _process_token(self, result:List[str, str], tags:List[str], token:List[str]):
+    def _process_token(self, result:List[Tuple[str, str]], tags:List[str], token:List[str]):
         """ Обработка токена: собираем его из bpe-токенов, выбираем нужные тэги
         :param result: Результирующий список с токенами и тэгами
         :param tags: Список тэгов, который был получен для составных bpe-токенов
@@ -161,7 +163,7 @@ class Predictor:
         for tag, probability in tags:
             probability_sums[tag] += probability
         best_classes = [item[0] for item in sorted(probability_sums.items(), key=lambda item: item[1]) if
-                        item[1] > self.threshold]
+                        item[1] > self._threshold]
         best_tags = [self._class2tag[bc] for bc in best_classes]
         # если в списке кандидатов больше двух элементов, выбираются два тэга с наибольшими вероятностями
         if len(best_tags) > 2:

@@ -17,37 +17,37 @@ class Evaluator:
         :param predicted_labels: Список предсканных тэгов
         :param true_labels: Список истинных тэгов
         """
-        self.class2tag = dict(enumerate(ASPECTS_LIST + ['O']))
-        self.tag2class = dict(zip(self.class2tag.values(), self.class2tag.keys()))
-        self.predicted_labels = self.vectorize_labels(predicted_labels)
-        self.true_labels = self.vectorize_labels(true_labels)
+        self._class2tag = dict(enumerate(ASPECTS_LIST + ['O']))
+        self._tag2class = dict(zip(self._class2tag.values(), self._class2tag.keys()))
+        self.predicted_labels = self._vectorize_labels(predicted_labels)
+        self.true_labels = self._vectorize_labels(true_labels)
 
-    def vectorize_label(self, label:str) -> np.array:
+    def _vectorize_label(self, label:str) -> np.array:
         """
         One-hot векторизация тэга
         :param label: Тэг в формате строки
         :return: Тэг в формате one-hot вектора
         """
-        vector = np.zeros(len(self.tag2class))
-        classes = [self.tag2class[tag] for tag in label.split('|')]
+        vector = np.zeros(len(self._tag2class))
+        classes = [self._tag2class[tag] for tag in label.split('|')]
         vector[classes] = 1
         return vector
 
-    def vectorize_labels(self, labels:List[str]) -> np.array:
+    def _vectorize_labels(self, labels:List[str]) -> np.array:
         """
         One-hot векторизация тэгов
         :param labels: Список тэгов в строковом формате
         :return: Массив one-hot векторов
         """
-        return np.vstack([self.vectorize_label(label) for label in list(chain.from_iterable(labels))])
+        return np.vstack([self._vectorize_label(label) for label in list(chain.from_iterable(labels))])
 
-    def unvectorize_labels(self, labels:np.array) -> List[str]:
+    def _unvectorize_labels(self, labels:np.array) -> List[str]:
         """
         Преобразование массива one-hot векторов в список строк
         :param labels: массив one-hot векторов
         :return: список тэгов в строковом формате
         """
-        return ['|'.join([self.class2tag[cls] for cls in np.argwhere(label > 0).flatten()]) for label in labels]
+        return ['|'.join([self._class2tag[cls] for cls in np.argwhere(label > 0).flatten()]) for label in labels]
 
     def confusion_matrix(self) -> np.array:
         """
@@ -101,7 +101,7 @@ class Evaluator:
         :return: Массив с метриками precision, recall, f1 и accuracy для каждого из тэгов + микро- и макроусреднения по всем тэгам
         """
         metrics = []
-        for tag in self.class2tag.keys():
+        for tag in self._class2tag.keys():
             metrics.append(self.count_metrics_for_tag(tag))
         metrics.append(self.count_avg_metrics(average='micro'))
         metrics.append(self.count_avg_metrics(average='macro'))
@@ -114,7 +114,7 @@ class Evaluator:
         """
         metrics = self.count_metrics()
         columns = ['Precision', 'Recall', 'F1', 'Accuracy']
-        index = list(self.tag2class.keys()) + ['Micro', 'Macro']
+        index = list(self._tag2class.keys()) + ['Micro', 'Macro']
         metrics_df = pd.DataFrame(metrics, columns=columns, index=index)
         metrics_df.columns.values[0] = 'Aspect'
         return metrics_df
@@ -126,7 +126,7 @@ class Evaluator:
         """
         confusion_matrix = self.confusion_matrix().T
         columns = ['True Positive', 'False Positive', 'False Negative', 'True Negative']
-        confusion_matrix_df = pd.DataFrame(confusion_matrix, columns=columns, index=self.tag2class.keys())
+        confusion_matrix_df = pd.DataFrame(confusion_matrix, columns=columns, index=self._tag2class.keys())
         return confusion_matrix_df
 
     def save_metrcis(self, experiment_name:str, dir_path=paths['results']):
@@ -141,7 +141,7 @@ class Evaluator:
         print(f'Metrics saved to {path}')
         return metrics_df
 
-    def make_label_chains(self, aspect_mask:np.array) -> List[Tuple[int, int]]:
+    def _make_label_chains(self, aspect_mask:np.array) -> List[Tuple[int, int]]:
         """
         Составление цепочек, относящихся к заданному аспекту. Вспомогательная функция для вычисления точности полного совпадения аспектов.
         :param aspect_mask: Маска аспекта: массив, где i-ое значение равно 1, если i-ый токен относится к данному аспекту.
@@ -172,9 +172,9 @@ class Evaluator:
         """
         total_intersection, total_true_chains = 0, 0
         ema_dict = OrderedDict()
-        for tag_idx, tag in self.class2tag.items():
-                true_chains = set(self.make_label_chains(self.true_labels[:, tag_idx]))
-                pred_chains = set(self.make_label_chains(self.predicted_labels[:, tag_idx]))
+        for tag_idx, tag in self._class2tag.items():
+                true_chains = set(self._make_label_chains(self.true_labels[:, tag_idx]))
+                pred_chains = set(self._make_label_chains(self.predicted_labels[:, tag_idx]))
                 # число правильно извлеченных аспектов
                 intersection = len(true_chains&pred_chains)
                 # число аспектов в тестовых данных
@@ -188,15 +188,3 @@ class Evaluator:
         ema_df = pd.DataFrame.from_dict(ema_dict, orient='index', columns=['Exact match accuracy'])
         ema_df.loc['Macro'] = ema_df[:-1].mean()
         return ema_df
-
-import json
-if __name__ == '__main__':
-    with open('train_preds.json') as file:
-        train_result= json.load(file)
-    with open('train_labels.json') as file:
-        train_labels = json.load(file)
-    train_predicted_labels = [[label for token, label in text] for text in train_result]
-    evaluator = Evaluator(train_predicted_labels, train_labels)
-    #OrderedDict([('Task', 0.48598130841121495), ('Contrib', 0.653250773993808), ('Method', 0.3448275862068966), ('Conc', 0.2867647058823529), ('TOTAL_ACCURACY', 0.5160256410256411)])
-    print(evaluator.build_confusion_matrix())
-    print(evaluator.exact_match_accuracy())

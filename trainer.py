@@ -19,40 +19,30 @@ from vectorizer import Vectorizer
 
 class Trainer:
     """Класс для обучения модели"""
-    def __init__(self, samples:Tuple[List[str],List[str]], model_name:str, experiment_name:str, weights_dir:str=paths['weights'], load_weights:bool=False,
-                 learning_rate:float=1e-3, model=None):
+    def __init__(self, samples:Tuple[List[str],List[str]], model_name:str, experiment_name:str, weights_dir:str=paths['weights'], load_weights:bool=False, model=None):
         """
         :param samples: Кортеж, в котором первый элемент список текстов, второй - список тэгов
         :param model_name: Название модели
         :param experiment_name: Название эксперимента
         :param weights_dir: Путь к папке для загрузки и сохранения весов модели
         :param load_weights: Загружать ли веса с диска
-        :param learning_rate: Шаг обучения
         :param model: Модель, созданная заранее
         """
-        self.model_name = model_name
-        self._vectorizer = Vectorizer(self.model_name)
         self._tag2class = tag2class
         if model:
             self._model = model
         else:
             self._model = get_model(model_name)
-        with open('train_config.json', 'r', encoding='UTF-8') as js:
-            train_config = json.load(js)
-            self._batch_size = train_config['batch_size']
-            self._epochs = train_config['num_epochs']
-            self._patience = train_config['patience']
-        with open('models.json', 'r', encoding='UTF-8') as js:
-            models = json.load(js)
-            self._model_config = models[self.model_name]
+        self._model_name = model_name
+        self._vectorizer = Vectorizer(self._model_name)
+        self._get_model_config(model_name)
+        self._get_train_config()
+        
         self._weights_dir = weights_dir
-        self.learning_rate = learning_rate
-
         if not os.path.exists(self._weights_dir):
             os.makedirs(self._weights_dir, exist_ok=True)
         weights_filename = f'{experiment_name}_weights.h5'
         self._path_to_weights = os.path.join(self._weights_dir, weights_filename)
-
         if load_weights:
             self._model.load_weights(self._path_to_weights)
 
@@ -67,10 +57,28 @@ class Trainer:
 
         self._num_of_train_samples = self._steps_per_epoch * self._batch_size
         self._num_of_val_samples = self._validation_steps * self._batch_size
-        self.schedule = ExponentialDecay(initial_learning_rate=self.learning_rate,
+        
+    
+    def _get_model_config(self):
+        with open(paths['model_config'], 'r', encoding='UTF-8') as js:
+            models = json.load(js)
+            self._model_config = models[self._model_name]
+        
+        self._learning_rate = self._model_config['learning_rate']
+        self._optimizer = Adam(learning_rate=self._schedule)
+        self._loss = getattr(sys.modules[__name__], self._model_config["loss"])
+        self._schedule = ExponentialDecay(initial_learning_rate=self._learning_rate,
                                          decay_steps=2 * self._steps_per_epoch, decay_rate=0.9)
-        self.optimizer = Adam(learning_rate=self.schedule)
-        self.loss = getattr(sys.modules[__name__], self._model_config["loss"])
+    
+    def _get_train_config(self):
+        with open(paths['train_config'], 'r', encoding='UTF-8') as js:
+            train_config = json.load(js)
+            self._batch_size = train_config['batch_size']
+            self._epochs = train_config['num_epochs']
+            self._patience = train_config['patience']
+
+    def set_learning_rate(self, learning_rate):
+        self._learning_rate = learning_rate
 
     def _generate_samples(self, samples:List[str], labels:List[str], num_of_samples:int)->Generator[np.array, np.array, np.array]:
         """
@@ -112,13 +120,13 @@ class Trainer:
                                 save_weights_only=True)
         stopper = EarlyStopping(monitor='val_loss', patience=self._patience, verbose=1, mode='auto',
                                 restore_best_weights=True)
-        scheduler = LearningRateScheduler(self.schedule)
+        scheduler = LearningRateScheduler(self._schedule)
         callbacks = [stopper, scheduler]
         if save_weights:
             callbacks.append(saver)
         self._model.compile(
-            optimizer=self.optimizer,
-            loss=self.loss,
+            optimizer=self._optimizer,
+            loss=self._loss,
             metrics=[CategoricalAccuracy()]
         )
         history = self._model.fit(
