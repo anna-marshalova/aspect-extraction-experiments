@@ -6,6 +6,7 @@ from utils import ASPECTS_LIST, MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, tag2clas
 
 
 class Vectorizer:
+    """Класс для векторизации текстов и тэгов"""
 
     def __init__(self, model_name: str):
         """
@@ -77,6 +78,7 @@ class Vectorizer:
         tokenized_text = []
         labels = []
 
+        # делим слова на bpe-токены
         for token, label in zip(text, token_labels):
             tokenized_word = self._tokenizer.tokenize(token)
             n_subwords = len(tokenized_word)

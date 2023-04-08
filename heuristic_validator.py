@@ -20,20 +20,25 @@ class HeuristicValidator:
         # чтобы не спутать служебные части с аббревиатурами, проверяем, что они не в верхнем регистре.
         # при этом если слово состоит из одной буквы и стоит в начале предложения, считаем его служебной частью речи.
         self._isabbr = lambda cur_token, prev_token: cur_token.isupper() and len(cur_token) > 1 and prev_token != '.'
+        # функция для проверки, является ли слово предлогом
         self._isprep = lambda parse, cur_token, prev_token: self.__check_pos('PREP', parse) and not self._isabbr(
             cur_token, prev_token)
+        # функция для проверки, является ли слово союзом или частицей
         self._isconj_prcl = lambda parse, cur_token, prev_token: self.__check_multiple_pos(['CONJ', 'PRCL'],
                                                                                            parse) and not self._isabbr(
             cur_token, prev_token)
+        # функция для проверки, является ли слово служебной частью речи
         self._isfunc_pos = lambda parse, cur_token, prev_token: self._isprep(parse, cur_token,
                                                                              prev_token) or self._isconj_prcl(parse,
                                                                                                               cur_token,
                                                                                                               prev_token)
+        # функция для проверки, является ли слово самостоятельной частью речи
         self._istrue_pos = lambda parse, cur_token, prev_token: not self._ispunct(parse,
                                                                                   cur_token) and not self._isfunc_pos(
             parse, cur_token, prev_token)
-
+        # функция для проверки, является ли слово страдательным причастием
         self._isprts_pssv = lambda parse: self.__check_pos('PRTS', parse) and self.__check_pos('pssv', parse)
+        # функция для проверки, является ли слово глаголом 3 лица (кроме форм глагола являться)
         self._isverb_3per = lambda parse: self.__check_pos('VERB', parse) and self.__check_pos('3per',
                                                                                                parse) and not self.__check_normal_form(
             'являться', parse)
@@ -113,7 +118,7 @@ class HeuristicValidator:
             if i + 1 < len(result):
                 next_token, _ = result[i + 1]
             else:
-                next_token = 'A' #для последнего токена нет следующего, но проверить его нужно, поэтому присвоеим next_label капитализированную строку
+                next_token = 'A'  # для последнего токена нет следующего, но проверить его нужно, поэтому присвоеим next_label капитализированную строку
             if cur_token == '.' and self._isaspect(cur_label) and next_token[0].isupper():
                 updated_result[i] = (cur_token, 'O')
         return [updated_result[i] for i in range(len(result))]
@@ -193,8 +198,10 @@ class HeuristicValidator:
                 aspects_for_token = cur_label.split('|')
                 aspects_deleted = cur_label
                 for aspect in aspects_for_token:
+                    # если аспекта нет в соседних тэгах
                     if aspect not in prev_label and aspect not in next_label:
                         cur_parse = self._morph.parse(cur_token)
+                        # если аспект не может быть выражен одним словом или токен не является самостоятельной частью речи
                         if self._islong(aspect) or not self._istrue_pos(cur_parse, cur_token, prev_token):
                             aspects_deleted = self.delete_aspect(aspect, aspects_deleted)
                             updated_result[i] = (cur_token, aspects_deleted)
@@ -224,8 +231,13 @@ class HeuristicValidator:
             prev_token, prev_label = updated_result[i - 1]
             cur_tags = cur_label.split('|')
             prev_tags = prev_label.split('|')
+            # если наборы аспектов в текущем и предыдущем тэгах совпадают, порядок аспектов тоже должен совпадать
+            # Contrib|Task, Task|Contrib -> Contrib|Task, Contrib|Task
             if set(cur_tags) == set(prev_tags):
                 updated_result[i] = (cur_token, prev_label)
+            # если начинается новый выложенный аспект, он должен стоять на втором месте
+            # Contrib, Task|Contrib -> Contrib, Contrib|Task
+            # на невложенные аспекты это не влияет: Contrib, Task -> Contrib, Task
             elif cur_tags[0] not in prev_tags:
                 updated_result[i] = (cur_token, '|'.join(cur_tags[::-1]))
         return [updated_result[i] for i in range(len(result))]

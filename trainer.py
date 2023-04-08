@@ -17,10 +17,20 @@ from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, RANDOM_STATE, paths, t
 from model import get_model
 from vectorizer import Vectorizer
 
+#TODO: comments
 class Trainer:
-
+    """Класс для обучения модели"""
     def __init__(self, samples:Tuple[List[str],List[str]], model_name:str, experiment_name:str, weights_dir:str=paths['weights'], load_weights:bool=False,
                  learning_rate:float=1e-3, model=None):
+        """
+        :param samples: Кортеж, в котором первый элемент список текстов, второй - список тэгов
+        :param model_name: Название модели
+        :param experiment_name: Название эксперимента
+        :param weights_dir: Путь к папке для загрузки и сохранения весов модели
+        :param load_weights: Загружать ли веса с диска
+        :param learning_rate: Шаг обучения
+        :param model: Модель, созданная заранее
+        """
         self.model_name = model_name
         self._vectorizer = Vectorizer(self.model_name)
         self._tag2class = tag2class
@@ -41,8 +51,8 @@ class Trainer:
 
         if not os.path.exists(self._weights_dir):
             os.makedirs(self._weights_dir, exist_ok=True)
-        weights_fname = f'{experiment_name}_weights.h5'
-        self._path_to_weights = os.path.join(self._weights_dir, weights_fname)
+        weights_filename = f'{experiment_name}_weights.h5'
+        self._path_to_weights = os.path.join(self._weights_dir, weights_filename)
 
         if load_weights:
             self._model.load_weights(self._path_to_weights)
@@ -64,6 +74,13 @@ class Trainer:
         self.loss = getattr(sys.modules[__name__], self._model_config["loss"])
 
     def _generate_samples(self, samples:List[str], labels:List[str], num_of_samples:int)->Generator[np.array, np.array, np.array]:
+        """
+        Генерация батча
+        :param samples: Список текстов для батча
+        :param labels: Список тэгов для батча
+        :param num_of_samples: Количество экземпляров в батче
+        :return: Батч: генератор, содержащий векторизованные тексты, маски к ним и тэги
+        """
         i = 0
         while True:
             texts = samples[i:i + self._batch_size]
@@ -72,6 +89,7 @@ class Trainer:
             X_masks = []
             y = []
             i += self._batch_size
+            # если архитектура модели позволяет, выбираем свою максимальную длинну для каждого батча
             if self._model_config['model_class'].endswith("ForTokenClassification"):
                 max_length = max([len(text) for text in texts]) * 2
             else:
@@ -86,6 +104,11 @@ class Trainer:
                 i = 0
 
     def train(self, save_weights:bool=True) -> tf.History:
+        """
+        Обучение модели
+        :param save_weights: Созранять ли веса на диск
+        :return: История обучения для анализа и построения графиков
+        """
         saver = ModelCheckpoint(self._path_to_weights, monitor='val_loss', verbose=1, save_best_only=True, mode='auto',
                                 save_weights_only=True)
         stopper = EarlyStopping(monitor='val_loss', patience=self._patience, verbose=1, mode='auto',

@@ -11,6 +11,7 @@ from heuristic_validator import HeuristicValidator
 
 
 class Predictor:
+    """Класс для получения предсказаний модели"""
 
     def __init__(self, model_name:str, threshold:float=0.5, weights_path:str=None, model=None):
         """
@@ -49,6 +50,7 @@ class Predictor:
         all_bpe_tokens = []
         all_predictions = []
 
+        # делим список токенов на батчи, которые будут последовательно обрабатываться
         n_batches = int(len(tokens) / 50) + 1
         for i in range(n_batches):
             start = 50 * i
@@ -83,14 +85,18 @@ class Predictor:
         :param result: Список кортежей, в которых первый элемент - токен, второй - тэг
         :return: Результат выравнивания - список кортежей, в которых первый элемент - токен, второй - тэг
         """
+
+        # если списки токенов изначально совпадают, то сразу возвращаем результат
         resulted_tokens = [res[0] for res in result]
         if resulted_tokens == input_tokens:
             return result
 
         updated_result = []
 
+        # фиксируем позицию токена в результирующем списке
         res_cursor = 0
         for i, token in enumerate(input_tokens):
+            # токенизируем токен из входного списка. Если длина получившихся токенов == 1, то это не составной токен
             tokenized = tokenize(token)
             if len(tokenized) == 1:
                 updated_result.append(result[res_cursor])
@@ -99,13 +105,17 @@ class Predictor:
 
             full_resulted = []
             tags = Counter()
+            # собираем все токены в результирующем списке, которые лежат в промежутке от res_cursor до
+            # res_cursor + количество токенов в tokenized
             for j in range(res_cursor, res_cursor + len(tokenized)):
                 full_resulted.append(result[j][0])
                 tags[result[j][1]] += 1
 
+            # на случай, если составным токенам были присвоены разные тэги, то выберем тэг с максимальной частотой
             tag = tags.most_common()[0][0]
             updated_result.append((''.join(full_resulted), tag))
 
+            # переведём позицию курсора на количество составных частей исходного токена
             res_cursor += len(tokenized)
 
         if len(input_tokens) != len(updated_result):
@@ -124,14 +134,17 @@ class Predictor:
         for bpe_token, pred in zip(bpe_tokens, preds):
             if bpe_token == '[UNK]':
                 bpe_token = '–'
+            # если bpe-токен не является началом целого токена, то он начинается с "##"
             if bpe_token.startswith('##'):
                 token.append(bpe_token[2:])
                 tags.extend(list(enumerate(pred)))
             else:
+                # если уже собрали токен до этого, то обработаем его и положим в результирущий список
                 if len(token) > 0:
                     self._process_token(result, tags, token)
                 token = [bpe_token]
                 tags = list(enumerate(pred))
+        # обработаем последний токен и положим его в результирующий список
         self._process_token(result, tags, token)
         return result
 
@@ -141,15 +154,19 @@ class Predictor:
         :param tags: Список тэгов, который был получен для составных bpe-токенов
         :param token: Список bpe-токенов для данного токена
         """
+        # объединяем составные bpe-токены в единую строку
         token_str = ''.join(token)
+        # складываем вероятности тэгов для каждого из составных bpe-токенов
         probability_sums = defaultdict(float)
         for tag, probability in tags:
             probability_sums[tag] += probability
         best_classes = [item[0] for item in sorted(probability_sums.items(), key=lambda item: item[1]) if
                         item[1] > self.threshold]
         best_tags = [self._class2tag[bc] for bc in best_classes]
+        # если в списке кандидатов больше двух элементов, выбираются два тэга с наибольшими вероятностями
         if len(best_tags) > 2:
             best_tags = best_tags[:2]
+        # если в список кандидатов пуст, выбираются тэг "O"
         if len(best_tags) == 0:
             best_tags = ['O']
         label = '|'.join(best_tags)

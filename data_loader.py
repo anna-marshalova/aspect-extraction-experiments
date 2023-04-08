@@ -1,13 +1,13 @@
 import os
 import csv
 from itertools import chain
-from tqdm.notebook import tqdm
+from tqdm.autonotebook import tqdm
 from typing import Tuple, List
 from utils import ASPECTS_LIST, paths
 
 
 class DataLoader:
-
+    """Класс для загрузки данных из файлов"""
     def __init__(self, path_to_files: str = paths['data'], max_len: int = 100):
         """
         :param path_to_files: Путь к файлам с разметкой
@@ -29,7 +29,7 @@ class DataLoader:
         else:
             return 'O'
 
-    def process_file(self, file_path: str) -> Tuple[List, List, List]:
+    def process_file(self, file_path: str) -> Tuple[List, List]:
         """
           Загрузка одного файла с текстом. Если текст содержит большее заданного числа токенов, он делится на несколько частей.
           :param file_path: Путь к файлу
@@ -39,12 +39,14 @@ class DataLoader:
         with open(file_path, 'r', encoding='utf-8') as f:
             text_parts, text_part_labels = [], []
             tokens, token_labels = [], []
+            # делим текст на части по предложениям, чтобы предложения не обрывались на середине
             sent, sent_labels = [], []
             reader = csv.DictReader(f)
             for row in reader:
                 sent.append(row['token'])
                 sent_labels.append(self.process_label(row['tag']))
                 if row['token'] == '.':
+                    # если с добавленным предложением текст не уместится в N=max_length токенов, переносим его в следующий семпл
                     if len(tokens) + len(sent) > self._max_len:
                         text_parts.append(tokens)
                         text_part_labels.append(token_labels)

@@ -5,12 +5,13 @@ import pandas as pd
 from itertools import chain
 from collections import OrderedDict
 from typing import List, Tuple
-#from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, balanced_accuracy_score
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, balanced_accuracy_score
 
 from utils import ASPECTS_LIST, paths
 
 
 class Evaluator:
+    """Класс для оценки модели"""
     def __init__(self, predicted_labels:List[str], true_labels:List[str]):
         """
         :param predicted_labels: Список предсканных тэгов
