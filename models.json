@@ -1,93 +1,27 @@
 {
   "mbert": {
-    "pretrained_model_name": "bert-base-multilingual-cased",
-    "config_class": "BertConfig",
-    "model_class": "TFBertForTokenClassification",
-    "tokenizer_class": "BertTokenizer",
-    "model_config": {
-      "from_pt": false
-    },
-    "tokenizer_config": {
-      "do_lower_case": false
-    },
-    "learning_rate": 1e-5,
-    "loss" : "BinaryCrossentropy"
-  },
+    "transformer_model": "TFBertForTokenClassification"},
   "rubert": {
     "pretrained_model_name": "DeepPavlov/rubert-base-cased",
-    "config_class": "BertConfig",
-    "model_class": "TFBertForTokenClassification",
-    "tokenizer_class": "BertTokenizer",
-    "model_config": {
-      "from_pt": true
-    },
-    "learning_rate": 1e-5,
-    "loss" : "BinaryCrossentropy"
-  },
+    "transformer_model": "TFBertForTokenClassification",
+    "from_pt": true},
   "rubert-tiny": {
     "pretrained_model_name": "cointegrated/rubert-tiny2",
-    "config_class": "BertConfig",
-    "model_class": "TFBertForTokenClassification",
-    "tokenizer_class": "BertTokenizer",
-    "model_config": {
-      "from_pt": true
-    },
-    "learning_rate": 1e-5,
-    "loss" : "BinaryCrossentropy"
+    "transformer_model": "TFBertForTokenClassification",
+    "from_pt": true
   },
   "ruSciBERT": {
     "pretrained_model_name": "sberbank-ai/ruSciBERT",
-    "config_class": "RobertaConfig",
-    "model_class": "TFRobertaForTokenClassification",
-    "tokenizer_class": "RobertaTokenizer",
-    "model_config": {
-      "from_pt": true
-    },
-    "learning_rate": 1e-5,
-    "loss" : "BinaryCrossentropy"
+    "transformer_config": "RobertaConfig",
+    "transformer_model": "TFRobertaForTokenClassification",
+    "transformer_tokenizer": "RobertaTokenizer",
+    "from_pt": true
   },
-  "mbert_bilstm": {
-    "pretrained_model_name": "bert-base-multilingual-cased",
-    "config_class": "BertConfig",
-    "model_class": "TFBertModel",
-    "tokenizer_class": "BertTokenizer",
-    "model_config": {
-      "from_pt": false, "dropout_rate":0.1
-    },
-    "learning_rate": 1e-5,
-    "loss" : "BinaryCrossentropy"
-  },
-  "mbert_bilstm_frozen": {
-    "pretrained_model_name": "bert-base-multilingual-cased",
-    "config_class": "BertConfig",
-    "model_class": "TFBertModel",
-    "tokenizer_class": "BertTokenizer",
-    "model_config": {
-      "from_pt": false, "dropout_rate":0.1, "LSTM_size": 50
-    },
-    "learning_rate": 1e-3,
-    "loss" : "BinaryCrossentropy"
-  },
+  "mbert_bilstm": {"bilstm_size": 50},
+  "mbert_bilstm_frozen": {"bilstm_size": 50,"freeze_weights": true},
   "mbert_crf": {
-    "pretrained_model_name": "bert-base-multilingual-cased",
-    "config_class": "BertConfig",
-    "model_class": "TFBertModel",
-    "tokenizer_class": "BertTokenizer",
-    "model_config": {
-      "from_pt": false, "dropout_rate":0.1, "LSTM_size": 50
-    },
-    "learning_rate": 1e-5,
+    "add_crf": true,
     "loss" : "SigmoidFocalCrossEntropy"
   },
-  "mbert_for_sents": {
-    "pretrained_model_name": "bert-base-multilingual-cased",
-    "config_class": "BertConfig",
-    "model_class": "TFBertModel",
-    "tokenizer_class": "BertTokenizer",
-    "model_config": {
-      "from_pt": false, "dropout_rate":0.1, "LSTM_size": 50
-    },
-    "learning_rate": 1e-5,
-    "loss" : "BinaryCrossentropy"
-  }
+  "mbert_for_sents": {"classify_sequence": true}
 }

@@ -2,8 +2,8 @@ import json
 import numpy as np
 from importlib import import_module
 from typing import Tuple, List, Any, Union
-from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, paths, tag2class, num_labels
-
+from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, ASPECTS_LIST, paths, tag2class, num_labels
+from config import get_model_config
 
 class Vectorizer:
     """Класс для векторизации текстов и тэгов"""
@@ -13,20 +13,12 @@ class Vectorizer:
         :param model_name: Название модели
         """
         self._model_name = model_name
-        self._get_tokenizer()
+        self._model_config = get_model_config(self._model_name)
+        self._tokenizer = self._model_config.transformer_tokenizer.from_pretrained(self._model_config.pretrained_model_name, do_lower_case=False)
         self._max_length = MAX_LENGTH
         self._tag2class = tag2class
 
-    def _get_tokenizer(self):
-        """Создание токенизатора"""
-        with open(paths['model_config'], 'r', encoding='UTF-8') as js:
-            models = json.load(js)
-            self._model_config = models[self._model_name]
-        tokenizer_class = getattr(import_module('transformers'), self._model_config['tokenizer_class'])
-        self._tokenizer = tokenizer_class.from_pretrained(self._model_config["pretrained_model_name"], do_lower_case=False)
-
-
-    def vectorize(self, text: List[str], token_labels: List[str] = [], max_length: int = None) -> Tuple[
+    def vectorize(self, text: List[str], token_labels: List[str] = None, max_length: int = None) -> Tuple[
         List[str], List[int], List[int], List[int]]:
         """
         Векторизация текста и тэгов токенов в тексте
@@ -40,6 +32,8 @@ class Vectorizer:
         """
         if not max_length:
             max_length = self._max_length
+        if not token_labels:
+            token_labels = ['O']*len(text)
         tokenized_text, input_masks, labels = self._tokenize(text, token_labels, max_length=max_length)
         input_ids = self._tokenizer.convert_tokens_to_ids(tokenized_text)
         tags = []
@@ -58,7 +52,7 @@ class Vectorizer:
         :return: One-hot вектор для тэга
         """
         vector = np.zeros(num_labels)
-        classes = [self._tag2class[tag] for tag in label.split('|')]
+        classes = [aspect in label.split('|') for aspect in ASPECTS_LIST]
         vector[classes] = 1
         return vector
 
@@ -105,12 +99,12 @@ class Vectorizer:
 
         return tokenized_text, inputs['attention_mask'], labels
 
-class Sentvectorizer(Vectorizer):
+class SentVectorizer(Vectorizer):
     def __int__(self, model_name: str):
         """
         :param model_name: Название модели
         """
-        super.__init__(model_name)
+        super().__init__(model_name)
 
     def vectorize(self, text: Union[List[str], str], label: str = 'O', max_length: int = None) -> Tuple[
         Union[List[str], str], List[int], List[int], np.array]:
@@ -137,7 +131,7 @@ class Sentvectorizer(Vectorizer):
         inputs = self._tokenizer.encode_plus(
             text,
             return_attention_mask=True,
-            max_length=self.max_length,
+            max_length=self._max_length,
             padding='max_length',
             truncation=True)
 

@@ -9,12 +9,13 @@ from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, ASPECTS_LIST, paths, c
 from model import get_model
 from vectorizer import Vectorizer
 from heuristic_validator import HeuristicValidator
+from config import get_model_config
 
 
 class Predictor:
     """Класс для получения предсказаний модели"""
 
-    def __init__(self, model_name:str, threshold:float=0.5, weights_dir:str=paths['weights'], weights_filename:str='weights.h5', model=None):
+    def __init__(self, model_name:str, threshold:float=0.5, weights_dir:str=paths['weights'], weights_filename:str='weights.h5', model=None, vectorizer:Vectorizer=None):
         """
         :param threshold: Порог, по которому определяется принадлежность токена к аспекту
         :param weights_dir: Путь к папке с весами модели
@@ -30,16 +31,15 @@ class Predictor:
         else:
             self._model = get_model(model_name)
             self._model.load_weights(self.weights_path)
-        self._get_model_config()
-        self._vectorizer = Vectorizer(self._model_name)
+        self._model_config = get_model_config(self._model_name)
+        if vectorizer:
+            self._vectorizer = vectorizer
+        else:
+            self._vectorizer = Vectorizer(self._model_name)
         self._class2tag = class2tag
         self._threshold = threshold
         self._heuristic_validator = HeuristicValidator()
 
-    def _get_model_config(self):
-        with open(paths['model_config'], 'r', encoding='UTF-8') as js:
-            models = json.load(js)
-            self._model_config = models[self._model_name]
     def extract(self, text: Union[str, List[str]], use_heuristics:bool=True, **kwargs) -> List[Tuple[str, str]]:
         """ Извлечение аспектов из входного текста
         :param text: Входной текст, может быть строкой либо уже токенизированным (списком строк)
@@ -66,7 +66,7 @@ class Predictor:
 
             bpe_tokens, input_ids, input_masks, _ = self._vectorizer.vectorize(tokens[start: end], max_length=MAX_LENGTH)
             preds = self._model.predict([np.array([input_ids]), np.array([input_masks])], verbose=False)[0]
-            if self._model_config['model_class'].endswith("ForTokenClassification"): #у разных моделей разный формат выходов
+            if self._model_config.transformer_model.__name__.endswith("ForTokenClassification"): #у разных моделей разный формат выходов
                 preds = preds[0]
             all_bpe_tokens.extend(bpe_tokens)
             all_predictions.extend(preds[:len(bpe_tokens)])
@@ -177,7 +177,7 @@ class Predictor:
 
 class SentPredictor(Predictor):
     def __init__(self, model_name: str, threshold: float = 0.5, weights_dir: str = paths['weights'],
-                 weights_filename: str = 'weights.h5', model=None):
+                 weights_filename: str = 'weights.h5', model=None, vectorizer:Vectorizer=None):
         """
         :param threshold: Порог, по которому определяется принадлежность токена к аспекту
         :param weights_dir: Путь к папке с весами модели
@@ -185,7 +185,7 @@ class SentPredictor(Predictor):
         :param model_name: Название модели
         :param model: Модель
         """
-        super.__init__(model_name, threshold, weights_dir, weights_filename, model)
+        super().__init__(model_name, threshold, weights_dir, weights_filename, model, vectorizer)
         self.aspects_array = np.array(ASPECTS_LIST)
 
     def extract(self, text: str) -> str:
@@ -196,7 +196,8 @@ class SentPredictor(Predictor):
         """
         _, input_ids, input_masks, _ = self._vectorizer.vectorize(text)
         preds = self._model.predict([np.array([input_ids]), np.array([input_masks])], verbose=False)[0]
-        pred_labels = self.aspects_array[preds >= self.threshold]
+        pred_labels = self.aspects_array[preds >= self._threshold]
+
         if len(pred_labels):
             return '|'.join(pred_labels)
         else:

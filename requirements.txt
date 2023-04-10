@@ -1,4 +1,3 @@
-pip setuptools wheel
 nltk==3.6.5
 numpy
 pandas==1.5.3

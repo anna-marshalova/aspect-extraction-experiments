@@ -233,9 +233,9 @@ class AspectExtractor:
                 file.write(aspects_string)
                 file.write('\n')
 
-class SentAspectextractor(AspectExtractor):
+class SentAspectExtractor(AspectExtractor):
     def __int__(self, predictor:Predictor):
-        super.__init__(predictor)
+        super().__init__(predictor)
 
     def extract_aspects(self, text:str) ->  Dict[str,List[str]]:
         extracted_aspects = defaultdict(list)

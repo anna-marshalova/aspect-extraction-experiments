@@ -7,6 +7,7 @@ from tensorflow.keras.layers import TimeDistributed, Dense, Dropout, Bidirection
 from tensorflow_addons.layers import CRF
 
 from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, paths, num_labels
+from config import get_model_config
 
 
 def get_model(model_name:str, num_labels:int=num_labels):
@@ -16,19 +17,15 @@ def get_model(model_name:str, num_labels:int=num_labels):
     :param num_labels: Число классов
     :return: Модель
     """
-    with open(paths['model_config'], 'r', encoding='UTF-8') as js:
-        models = json.load(js)
-        model_config = models[model_name]
-    model_class = getattr(import_module('transformers'), model_config['model_class'])
-    config_class = getattr(import_module('transformers'), model_config['config_class'])
+    model_config = get_model_config(model_name)
 
-    if model_config['model_class'].endswith("ForTokenClassification"):
-        config = config_class.from_pretrained(model_config["pretrained_model_name"], num_labels=num_labels)
-        model = model_class.from_pretrained(model_config["pretrained_model_name"], config=config, **model_config["model_config"])
+    if model_config.transformer_model.__name__.endswith("ForTokenClassification"):
+        config = model_config.transformer_config.from_pretrained(model_config.pretrained_model_name, num_labels=num_labels)
+        model = model_config.transformer_model.from_pretrained(model_config.pretrained_model_name, config=config, from_pt = model_config.from_pt)
         model.layers[-1].activation = sigmoid
 
-    elif model_config['model_class'].endswith("Model"):
-        transformer_model = model_class.from_pretrained(model_config["pretrained_model_name"], model_config["model_config"])
+    elif model_config.transformer_model.__name__.endswith("Model"):
+        transformer_model = model_config.transformer_model.from_pretrained(model_config.pretrained_model_name, from_pt = model_config.from_pt)
         input_ids_in = Input(shape=(MAX_LENGTH,), name='input_token', dtype='int32')
         input_masks_in = Input(shape=(MAX_LENGTH,), name='masked_token', dtype='int32')
         if "frozen" in model_name:
@@ -37,15 +34,17 @@ def get_model(model_name:str, num_labels:int=num_labels):
                 for w in layer.weights: w._trainable = False
 
         X = transformer_model(input_ids_in, attention_mask=input_masks_in)[0]
-        X = Dropout(model_config["dropout_rate"])(X)
-        if "for_sents" in model_name:
+        X = Dropout(model_config.dropout_rate)(X)
+        if model_config.classify_sequence:
             X = X[:, 0, :] #получаем cls-вектор
 
-        if "BiLSTM" in model_name:
-            X = Bidirectional(LSTM(model_config["LSTM_size"], return_sequences=True, dropout=model_config["dropout_rate"], recurrent_dropout=model_config["dropout_rate"]))(X)
+        if model_config.bilstm_size > 0:
+            X = Bidirectional(LSTM(model_config.bilstm_size, return_sequences=True, dropout=model_config.dropout_rate, recurrent_dropout=model_config.dropout_rate))(X)
 
-        if 'CRF' in model_name:
+        if model_config.add_crf:
             X = CRF(num_labels)(X)[1]
+        elif model_config.classify_sequence:
+            X = Dense(num_labels, activation='sigmoid')(X)
         else:
             X = TimeDistributed(Dense(num_labels, activation='sigmoid'))(X)
 

@@ -6,7 +6,7 @@ from tqdm.autonotebook import tqdm
 from IPython.display import HTML, display_html
 from utils import paths
 from predictor import Predictor
-from aspect_extractor import SentAspectextractor
+from aspect_extractor import SentAspectExtractor
 
 nltk.download('punkt')
 class TagAnnotator:
@@ -16,15 +16,15 @@ class TagAnnotator:
         """
         :param predictor: Объект класса для получения предсказаний модели
         """
-        self.predictor = predictor
+        self._predictor = predictor
         #цвета, которыми будут выделяться аспекты
         self._ASPECT2COLOR = {'Task': '#A5C033', 'Contrib': '#DA95B8', 'Method': '#6EC4DB', 'Conc': '#F5B527'}
         self._css_aspects = ' '.join(
-            [f'{aspect} {{background-color:{color}}}' for aspect, color in self._ASPECT2COLOR.items()])
+            [f'{aspect} {{background-color:{color}; padding: 2px;border-radius:5px;}}' for aspect, color in self._ASPECT2COLOR.items()])
         self._html_legend = ' '.join(
             [f'<{aspect} class="legend">{aspect}</{aspect}>' for aspect in self._ASPECT2COLOR.keys()])
         self._style =  'body {{color:black; background-color:white;width:{width};padding:{padding};}} .legend {{padding: 2px;}} #legend-wrapper {{margin-bottom:10px;margin-top:10px}}'
-        self._html_template = '<style>{css_body} {self._css_aspects} </style> <div id="legend-wrapper"> {self._html_legend} </div> <div>{annot}</div>'
+        self._html_template = '<style>{style} {aspects} </style> <div id="legend-wrapper"> {legend} </div> <div>{annot}</div>'
 
     def annotate_with_tags(self, text: Union[List[str], str], labels: List[str] = None, **kwargs) -> str:
         """
@@ -42,7 +42,7 @@ class TagAnnotator:
             assert len(text) == len(labels), f"Cannot annotate {len(text)} tokens with {len(labels)} labels "
             result = list(zip(text, labels))
         else:
-            result = self.predictor.extract(text)
+            result = self._predictor.extract(text)
         for i, (cur_token, cur_label) in enumerate(result):
             if i >= 1:
                 _, prev_label = result[i - 1]
@@ -74,7 +74,7 @@ class TagAnnotator:
         """
         style = self._style.format(width = width, padding = padding)
         annot = self.annotate_with_tags(text, **kwargs).replace(' </', '</').replace('></', '> </')
-        html = self._html_template.format(style = style, annot = annot)
+        html = self._html_template.format(style = style, annot = annot, aspects = self._css_aspects, legend = self._html_legend)
         return html
 
     def display_annotation_with_color(self, text: Union[List[str], str], **kwargs):
@@ -105,12 +105,12 @@ class TagAnnotator:
                 writer.writerow({'id': text_id, 'text': text_with_labels})
 
 class SentAnnotator(TagAnnotator):
-    def __int__(self, predictor: Predictor):
+    def __init__(self, predictor: Predictor):
         """
         :param predictor: Объект класса для получения предсказаний модели
         """
-        super.__int__()
-        self._process = SentAspectextractor(predictor, normalize=False).process
+        super().__init__(predictor)
+        self._processor = SentAspectExtractor(predictor, normalize=False)
 
     def annotate_sents(self, text, labels: List[str] = None):
         sents = nltk.sent_tokenize(text)
@@ -118,7 +118,7 @@ class SentAnnotator(TagAnnotator):
             assert len(sents) == len(labels), f"Cannot annotate {len(sents)} tokens with {len(labels)} labels "
         else:
             labels = [self._predictor.extract(sent) for sent in tqdm(sents)]
-        return [self._process(nltk.word_tokenize(sent)) for sent in sents], labels
+        return [self._processor.process(nltk.word_tokenize(sent)) for sent in sents], labels
 
     def annotate_with_colors(self, text: Union[List[str], str], padding: str = '20px', width: str = '50%',
                              **kwargs) -> str:
@@ -133,7 +133,7 @@ class SentAnnotator(TagAnnotator):
         style = self._style.format(width=width, padding=padding)
         sents, labels = self.annotate_sents(text)
         annot = ' '.join(f'<p>{sent} {self._split_label(label)} </p> ' for sent, label in zip(sents, labels))
-        html = self._html_template.format(style=style, annot=annot)
+        html = self._html_template.format(style = style, annot = annot, aspects = self._css_aspects, legend = self._html_legend)
         return html
 
     def _split_label(self, label: str) -> str:
