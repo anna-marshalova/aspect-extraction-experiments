@@ -5,7 +5,7 @@ import numpy as np
 from collections import Counter, defaultdict
 from typing import Tuple, List, Union
 
-from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, paths, class2tag, tokenize
+from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, ASPECTS_LIST, paths, class2tag, tokenize
 from model import get_model
 from vectorizer import Vectorizer
 from heuristic_validator import HeuristicValidator
@@ -50,7 +50,6 @@ class Predictor:
             tokens = tokenize(text)
         else:
             tokens = text
-        labels = ['O' for i in range(len(tokens))]
         all_bpe_tokens = []
         all_predictions = []
 
@@ -65,7 +64,7 @@ class Predictor:
             if start == end:
                 break
 
-            bpe_tokens, input_ids, input_masks, tags = self._vectorizer.vectorize(tokens[start: end], labels[start: end], max_length=MAX_LENGTH)
+            bpe_tokens, input_ids, input_masks, _ = self._vectorizer.vectorize(tokens[start: end], max_length=MAX_LENGTH)
             preds = self._model.predict([np.array([input_ids]), np.array([input_masks])], verbose=False)[0]
             if self._model_config['model_class'].endswith("ForTokenClassification"): #у разных моделей разный формат выходов
                 preds = preds[0]
@@ -176,3 +175,29 @@ class Predictor:
         label = '|'.join(best_tags)
         result.append((token_str, label))
 
+class SentPredictor(Predictor):
+    def __init__(self, model_name: str, threshold: float = 0.5, weights_dir: str = paths['weights'],
+                 weights_filename: str = 'weights.h5', model=None):
+        """
+        :param threshold: Порог, по которому определяется принадлежность токена к аспекту
+        :param weights_dir: Путь к папке с весами модели
+        :param weights_filename: Название файла с весами модели
+        :param model_name: Название модели
+        :param model: Модель
+        """
+        super.__init__(model_name, threshold, weights_dir, weights_filename, model)
+        self.aspects_array = np.array(ASPECTS_LIST)
+
+    def extract(self, text: str) -> str:
+        """
+        Классификация предложения по аспектам
+        :param text: Предложение в строковом формате
+        :return: Аспекты в предложении, соединенные знаком |, либо 'O', если аспектов в предложении нет
+        """
+        _, input_ids, input_masks, _ = self._vectorizer.vectorize(text)
+        preds = self._model.predict([np.array([input_ids]), np.array([input_masks])], verbose=False)[0]
+        pred_labels = self.aspects_array[preds >= self.threshold]
+        if len(pred_labels):
+            return '|'.join(pred_labels)
+        else:
+            return 'O'

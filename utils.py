@@ -16,6 +16,7 @@ paths = {'data': os.path.join(ROOT, 'датасеты', 'cross_domain_bio_aspect
          'examples': os.path.join(ROOT, 'experiment_results', 'cross_domain', 'examples'),
          'cross_domain_weights': os.path.join(ROOT, 'weights', 'AspectsWeights', 'cross_domain'),
          'cross_domain_results': os.path.join(ROOT, 'experiment_results', 'cross_domain', 'cross_domain'),
+         'table_annotation' : os.path.join(ROOT, 'разметка'),
          'model_config': 'models.json',
          'train_config': 'train_config.json'}
 class2tag = dict(enumerate(ASPECTS_LIST))

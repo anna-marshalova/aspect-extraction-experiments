@@ -38,6 +38,8 @@ def get_model(model_name:str, num_labels:int=num_labels):
 
         X = transformer_model(input_ids_in, attention_mask=input_masks_in)[0]
         X = Dropout(model_config["dropout_rate"])(X)
+        if "for_sents" in model_name:
+            X = X[:, 0, :] #получаем cls-вектор
 
         if "BiLSTM" in model_name:
             X = Bidirectional(LSTM(model_config["LSTM_size"], return_sequences=True, dropout=model_config["dropout_rate"], recurrent_dropout=model_config["dropout_rate"]))(X)

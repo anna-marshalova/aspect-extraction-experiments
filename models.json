@@ -78,5 +78,16 @@
     },
     "learning_rate": 1e-5,
     "loss" : "SigmoidFocalCrossEntropy"
+  },
+  "mbert_for_sents": {
+    "pretrained_model_name": "bert-base-multilingual-cased",
+    "config_class": "BertConfig",
+    "model_class": "TFBertModel",
+    "tokenizer_class": "BertTokenizer",
+    "model_config": {
+      "from_pt": false, "dropout_rate":0.1, "LSTM_size": 50
+    },
+    "learning_rate": 1e-5,
+    "loss" : "BinaryCrossentropy"
   }
 }

@@ -6,7 +6,8 @@ from collections import OrderedDict
 from typing import List, Tuple
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, balanced_accuracy_score
 
-from utils import get_aspect_list, paths
+from utils import ASPECTS_LIST, paths
+from vectorizer import Vectorizer
 
 
 class Evaluator:

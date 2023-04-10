@@ -1,8 +1,8 @@
 import json
 import numpy as np
 from importlib import import_module
-from typing import Tuple, List, Any
-from utils import ASPECTS_LIST, MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, paths, tag2class, num_labels
+from typing import Tuple, List, Any, Union
+from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, paths, tag2class, num_labels
 
 
 class Vectorizer:
@@ -26,7 +26,7 @@ class Vectorizer:
         self._tokenizer = tokenizer_class.from_pretrained(self._model_config["pretrained_model_name"], do_lower_case=False)
 
 
-    def vectorize(self, text: List[str], token_labels: List[str], max_length: int = None) -> Tuple[
+    def vectorize(self, text: List[str], token_labels: List[str] = [], max_length: int = None) -> Tuple[
         List[str], List[int], List[int], List[int]]:
         """
         Векторизация текста и тэгов токенов в тексте
@@ -44,17 +44,23 @@ class Vectorizer:
         input_ids = self._tokenizer.convert_tokens_to_ids(tokenized_text)
         tags = []
         for label in labels:
-            tag = np.zeros(num_labels)
-            label = label.split('|')
-            for t in label:
-                if t in ASPECTS_LIST:
-                    tag[self._tag2class[t]] = 1.0
-            tags.append(tag)
+            tags.append(self.vectorize_label(label))
         input_ids = self._pad(input_ids, 0, max_length=max_length)
         input_masks = self._pad(input_masks, 0, max_length=max_length)
         tags = self._pad(tags, np.zeros(num_labels), max_length=max_length)
 
         return tokenized_text, input_ids, input_masks, tags
+
+    def vectorize_label(self, label:str) -> np.array:
+        """
+        Преобразует тэг в one-hot вектор
+        :param label: Тэг
+        :return: One-hot вектор для тэга
+        """
+        vector = np.zeros(num_labels)
+        classes = [self._tag2class[tag] for tag in label.split('|')]
+        vector[classes] = 1
+        return vector
 
     def _pad(self, input: List[Any], padding: Any, max_length: int) -> List[Any]:
         """
@@ -70,7 +76,7 @@ class Vectorizer:
             input.append(padding)
         return input
 
-    def _tokenize(self, text: List[str], token_labels: List[str], max_length) -> Tuple[List[str], List[int], List[str]]:
+    def _tokenize(self, text: List[str], token_labels: List[str], max_length) -> Tuple[List[str], List[int], List[np.array]]:
         """
         Денение текста на bpe-токены и векторизация
         :param text: Текст (список токенов)
@@ -78,7 +84,7 @@ class Vectorizer:
         :param max_length: Максимальное число bpe-токенов в векторизованном тексте (остальные обрезается)
         :return: ``tokenized_text``: Текст, разделенный на bpe-токены,
                  ``input_masks``: Маска для текста,
-                 ``labels``:  Тэги для bpe-токенов в тексте
+                 ``labels``:  Тэги для bpe-токенов в тексте (one-hot encoded)
         """
         tokenized_text = []
         labels = []
@@ -98,3 +104,41 @@ class Vectorizer:
             truncation=True)
 
         return tokenized_text, inputs['attention_mask'], labels
+
+class Sentvectorizer(Vectorizer):
+    def __int__(self, model_name: str):
+        """
+        :param model_name: Название модели
+        """
+        super.__init__(model_name)
+
+    def vectorize(self, text: Union[List[str], str], label: str = 'O', max_length: int = None) -> Tuple[
+        Union[List[str], str], List[int], List[int], np.array]:
+        """
+        Векторизация текста
+        :param text: Текст (строка или список токенов)
+        :param label: Тэг
+        :return:   ``text``: Текст в исходном виде,
+                   ``input_ids``: Вектор текста,
+                   ``input_masks``: Маска для текста,
+                   ``tags``: One-hot-encoded тэг
+        """
+        input_ids, input_masks = self._tokenize(text)
+        tag = self.vectorize_label(label)
+        return text, input_ids, input_masks, tag
+
+    def _tokenize(self, text: str) -> Tuple[List[int], List[int]]:
+        """
+        :param text: Текст (список токенов)
+        :param text:
+        :return: ``input_masks``: Маска для текста,
+                 ``labels``:  Тэги для bpe-токенов в тексте (one-hot encoded)
+        """
+        inputs = self._tokenizer.encode_plus(
+            text,
+            return_attention_mask=True,
+            max_length=self.max_length,
+            padding='max_length',
+            truncation=True)
+
+        return inputs['input_ids'], inputs['attention_mask']

@@ -8,12 +8,12 @@ from utils import ASPECTS_LIST, paths
 
 class DataLoader:
     """Класс для загрузки данных из файлов"""
-    def __init__(self, path_to_files: str = paths['data'], max_len: int = 100):
+    def __init__(self, data_dir: str = paths['data'], max_len: int = 100):
         """
-        :param path_to_files: Путь к файлам с разметкой
+        :param data_dir: Путь к файлам с разметкой
         :param max_len: Максимальное количество токенов в одном тексте. Тексты, содержащие большее число токенов, делятся на несколько частей.
         """
-        self._path_to_files = path_to_files
+        self._data_dir = data_dir
         self._max_len = max_len
 
     def _process_label(self, label: str) -> str:
@@ -29,7 +29,7 @@ class DataLoader:
         else:
             return 'O'
 
-    def process_file(self, file_path: str) -> Tuple[List, List]:
+    def process_file(self, file_path: str) -> Tuple[List[str], List[str]]:
         """
           Загрузка одного файла с текстом. Если текст содержит большее заданного числа токенов, он делится на несколько частей.
           :param file_path: Путь к файлу
@@ -94,9 +94,9 @@ class DataLoader:
         if mode.startswith('cross_domain'):
             dataset_samples = []
             dataset_labels = []
-            domains = sorted(os.listdir(self._path_to_files))
+            domains = sorted(os.listdir(self._data_dir))
             for domain in tqdm(domains, desc='loading dataset'):
-                domain_path = os.path.join(self._path_to_files, domain)
+                domain_path = os.path.join(self._data_dir, domain)
                 samples, labels = self.load_dir(domain_path)
                 dataset_samples.append(samples)
                 dataset_labels.append(labels)
@@ -104,6 +104,6 @@ class DataLoader:
                 return list(chain.from_iterable(dataset_samples)), list(chain.from_iterable(
                     dataset_labels)), domains  # mode = 'cross_domain_flat' Tuple[List[List], List[List], List] Списки токенов в списках текстов
             return dataset_samples, dataset_labels, domains  # mode = 'cross_domain' Tuple[List[List[List]], List[List[List]], List] Списки токенов в списках текстов в списках доменов
-        dataset_samples, dataset_labels = self.load_dir(self._path_to_files)
+        dataset_samples, dataset_labels = self.load_dir(self._data_dir)
         domains = ['']
         return dataset_samples, dataset_labels, domains  # mode = 'flat' Tuple[List[List], List[List], ['']] Списки токенов в списках текстов

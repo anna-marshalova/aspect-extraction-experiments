@@ -1,12 +1,14 @@
 import os
 import csv
+import nltk
 from typing import List, Union
 from tqdm.autonotebook import tqdm
 from IPython.display import HTML, display_html
 from utils import paths
 from predictor import Predictor
+from aspect_extractor import SentAspectextractor
 
-
+nltk.download('punkt')
 class TagAnnotator:
     """Класс для автоматической разметки текстов тэгами аспектов"""
 
@@ -21,8 +23,10 @@ class TagAnnotator:
             [f'{aspect} {{background-color:{color}}}' for aspect, color in self._ASPECT2COLOR.items()])
         self._html_legend = ' '.join(
             [f'<{aspect} class="legend">{aspect}</{aspect}>' for aspect in self._ASPECT2COLOR.keys()])
+        self._style =  'body {{color:black; background-color:white;width:{width};padding:{padding};}} .legend {{padding: 2px;}} #legend-wrapper {{margin-bottom:10px;margin-top:10px}}'
+        self._html_template = '<style>{css_body} {self._css_aspects} </style> <div id="legend-wrapper"> {self._html_legend} </div> <div>{annot}</div>'
 
-    def annotate_with_tags(self, text: Union[List[str], str], labels: List[str] = None) -> str:
+    def annotate_with_tags(self, text: Union[List[str], str], labels: List[str] = None, **kwargs) -> str:
         """
         Разметка текста тэгами аспектов
         :param text: Текст (токенизированный или нет)
@@ -68,9 +72,9 @@ class TagAnnotator:
         :return: HTML разметка в формате строки.
         Содержит текст, в котором каждый аспект выделен определенным цветом и легенду, позволяющую понять, каким цветом обозначается каждый аспект.
         """
-        css_body = f'body {{color:black; background-color:white;width:{width};padding:{padding};}} .legend {{padding: 2px;}} #legend-wrapper {{margin-bottom:10px;margin-top:10px}}'
-        annot = self.annotate_with_tags(text, labels=labels).replace(' </', '</').replace('></', '> </')
-        html = f'<style>{css_body} {self._css_aspects} </style> <div id="legend-wrapper"> {self._html_legend} </div> <div>{annot}</div>'
+        style = self._style.format(width = width, padding = padding)
+        annot = self.annotate_with_tags(text, **kwargs).replace(' </', '</').replace('></', '> </')
+        html = self._html_template.format(style = style, annot = annot)
         return html
 
     def display_annotation_with_color(self, text: Union[List[str], str], **kwargs):
@@ -99,3 +103,57 @@ class TagAnnotator:
             for text_id, text in enumerate(tqdm(texts)):
                 text_with_labels = self.annotate_with_tags(text)
                 writer.writerow({'id': text_id, 'text': text_with_labels})
+
+class SentAnnotator(TagAnnotator):
+    def __int__(self, predictor: Predictor):
+        """
+        :param predictor: Объект класса для получения предсказаний модели
+        """
+        super.__int__()
+        self._process = SentAspectextractor(predictor, normalize=False).process
+
+    def annotate_sents(self, text, labels: List[str] = None):
+        sents = nltk.sent_tokenize(text)
+        if labels:
+            assert len(sents) == len(labels), f"Cannot annotate {len(sents)} tokens with {len(labels)} labels "
+        else:
+            labels = [self._predictor.extract(sent) for sent in tqdm(sents)]
+        return [self._process(nltk.word_tokenize(sent)) for sent in sents], labels
+
+    def annotate_with_colors(self, text: Union[List[str], str], padding: str = '20px', width: str = '50%',
+                             **kwargs) -> str:
+        """
+        Создание HTML разметка в формате строки, в которой каждый аспект выделен определенным цветом
+        :param text: Текст (токенизированный или нет)
+        :param padding: Размер отступов между элементами легенды в html
+        :param width: Ширина страницы с разметкой
+        :return: HTML разметка в формате строки.
+        Содержит текст, в котором каждый аспект выделен определенным цветом и легенду, позволяющую понять, каким цветом обозначается каждый аспект.
+        """
+        style = self._style.format(width=width, padding=padding)
+        sents, labels = self.annotate_sents(text)
+        annot = ' '.join(f'<p>{sent} {self._split_label(label)} </p> ' for sent, label in zip(sents, labels))
+        html = self._html_template.format(style=style, annot=annot)
+        return html
+
+    def _split_label(self, label: str) -> str:
+        """
+        Разделение тэга предложения на аспекты для выделения цветом
+        :param label: Тэг предложения
+        :return: Строка формата <{aspect}>{aspect}</{aspect}>, где aspect - название аспекта
+        """
+        aspects = label.split('|')
+        if aspects == ['O']:
+            aspects = ['NoAspect']
+        return ' '.join(f'<{aspect}>{aspect}</{aspect}>' for aspect in aspects)
+
+    def annotate_with_tags(self, text: Union[List[str], str], labels: List[str] = None, **kwargs) -> str:
+        """
+        Разметка текста тэгами аспектов
+        :param text: Текст
+        :param labels: Список тэгов (нужен, например, для выполнения разметки известными тэгами из датасета)
+        :return: Текст, размеченный тэгами аспектамов.
+        Пример: В статье <Contrib> предложен инструмент для <Task> распознавания речи </Task> </Contrib>. ...
+        """
+        annotated_sents = [f'<{label}> {sent} </{label}' for sent, label in self.annotate_sents(text)]
+        return ' .'.join(annotated_sents)

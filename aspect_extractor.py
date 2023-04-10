@@ -1,4 +1,5 @@
 import os
+import nltk
 from tqdm.autonotebook import tqdm
 from typing import List, Set, Union, Dict
 from collections import defaultdict
@@ -9,6 +10,9 @@ from spacy.tokens.doc import Doc
 
 from utils import paths
 from predictor import Predictor
+
+nltk.download('punkt')
+
 
 class AspectExtractor:
     """ Класс для извлечения аспектов как словосочетаний"""
@@ -145,7 +149,7 @@ class AspectExtractor:
             text.append(self._PAIRED_L2R.get(p, p))
         return text
 
-    def __process(self, text:List[str]) -> str:
+    def process(self, text:List[str]) -> str:
         """
         Обработка текста аспекта: нормализация, балансирование парной пунктуации, детокенизация, капитализация
         :param text: Токенизированный текст
@@ -178,7 +182,7 @@ class AspectExtractor:
                 if aspect not in prev_label:
                     extracted_aspects[aspect].append([])
                 extracted_aspects[aspect][-1].append(cur_token)
-        return {aspect: [self.__process(mention) for mention in mentions] for aspect, mentions in
+        return {aspect: [self.process(mention) for mention in mentions] for aspect, mentions in
                 extracted_aspects.items()}
 
     def stringify_extracted_aspects(self, text:Union[List[str],str]=None, extracted_aspects:Dict[str,List[str]]=None) -> str:
@@ -228,3 +232,17 @@ class AspectExtractor:
                 file.write(f'Текст №{text_idx + 1}')
                 file.write(aspects_string)
                 file.write('\n')
+
+class SentAspectextractor(AspectExtractor):
+    def __int__(self, predictor:Predictor):
+        super.__init__(predictor)
+
+    def extract_aspects(self, text:str) ->  Dict[str,List[str]]:
+        extracted_aspects = defaultdict(list)
+        sents = nltk.sent_tokenize(text)
+        labels = [self._predictor.extract(sent) for sent in tqdm(sents)]
+        for sent, label in zip(sents, labels):
+            aspects = [tag for tag in label.split('|') if tag!='O']
+            for aspect in aspects:
+                extracted_aspects[aspect].append(self.process(nltk.word_tokenize(sent)))
+        return extracted_aspects
