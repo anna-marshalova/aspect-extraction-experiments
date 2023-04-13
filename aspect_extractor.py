@@ -1,8 +1,8 @@
 import os
 import nltk
 from tqdm.autonotebook import tqdm
-from typing import List, Set, Union, Dict
 from collections import defaultdict
+from typing import List, Set, Union, Dict
 import pymorphy2
 import spacy
 from spacy.tokens.token import Token
@@ -216,7 +216,7 @@ class AspectExtractor:
         return aspects_string
 
     def save_extracted_aspects(self, texts:List[Union[List[str],str]], annot_dir: str = paths['examples'],
-                     filename: str = 'test_auto_annotated.csv'):
+                     filename: str = 'test_auto_annotated.txt'):
         """
         Сохранение извлеченных аспектов в файл
         :param texts: Тексты (токенизированные или нет)
@@ -229,9 +229,10 @@ class AspectExtractor:
         with open(path, 'w', encoding='utf-8') as file:
             for text_idx, text in enumerate(tqdm(texts)):
                 aspects_string = self.stringify_extracted_aspects(text=text)
-                file.write(f'Текст №{text_idx + 1}')
+                file.write(f'Текст №{text_idx + 1}\n')
                 file.write(aspects_string)
                 file.write('\n')
+        print(f'Extracted aspects saved to {path}')
 
 class SentAspectExtractor(AspectExtractor):
     def __int__(self, predictor:Predictor):

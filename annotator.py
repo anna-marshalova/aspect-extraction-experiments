@@ -20,10 +20,10 @@ class TagAnnotator:
         #цвета, которыми будут выделяться аспекты
         self._ASPECT2COLOR = {'Task': '#A5C033', 'Contrib': '#DA95B8', 'Method': '#6EC4DB', 'Conc': '#F5B527'}
         self._css_aspects = ' '.join(
-            [f'{aspect} {{background-color:{color}; padding: 2px;border-radius:5px;}}' for aspect, color in self._ASPECT2COLOR.items()])
+            [f'{aspect} {{background-color:{color}; padding-right: 2px;}}' for aspect, color in self._ASPECT2COLOR.items()])
         self._html_legend = ' '.join(
             [f'<{aspect} class="legend">{aspect}</{aspect}>' for aspect in self._ASPECT2COLOR.keys()])
-        self._style =  'body {{color:black; background-color:white;width:{width};padding:{padding};}} .legend {{padding: 2px;}} #legend-wrapper {{margin-bottom:10px;margin-top:10px}}'
+        self._style =  'body {{color:black; background-color:white;width:{width};padding:{padding};font-family: "Roboto",sans-serif;}} .legend {{padding: 2px; border-radius:5px;}} #legend-wrapper {{margin-bottom:10px;margin-top:10px}}'
         self._html_template = '<style>{style} {aspects} </style> <div id="legend-wrapper"> {legend} </div> <div>{annot}</div>'
 
     def annotate_with_tags(self, text: Union[List[str], str], labels: List[str] = None, **kwargs) -> str:
@@ -103,6 +103,7 @@ class TagAnnotator:
             for text_id, text in enumerate(tqdm(texts)):
                 text_with_labels = self.annotate_with_tags(text)
                 writer.writerow({'id': text_id, 'text': text_with_labels})
+        print(f'Annotation saved to {path}')
 
 class SentAnnotator(TagAnnotator):
     def __init__(self, predictor: Predictor):
@@ -155,5 +156,5 @@ class SentAnnotator(TagAnnotator):
         :return: Текст, размеченный тэгами аспектамов.
         Пример: В статье <Contrib> предложен инструмент для <Task> распознавания речи </Task> </Contrib>. ...
         """
-        annotated_sents = [f'<{label}> {sent} </{label}' for sent, label in self.annotate_sents(text)]
+        annotated_sents = [f'<{label}> {sent} </{label}' for sent, label in self.annotate_sents(text, labels = labels)]
         return ' .'.join(annotated_sents)

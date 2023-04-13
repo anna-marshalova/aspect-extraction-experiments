@@ -17,7 +17,8 @@ paths = {'data': os.path.join(ROOT, 'датасеты', 'cross_domain_bio_aspect
          'cross_domain_weights': os.path.join(ROOT, 'weights', 'AspectsWeights', 'cross_domain'),
          'cross_domain_results': os.path.join(ROOT, 'experiment_results', 'cross_domain', 'cross_domain'),
          'table_annotation' : os.path.join(ROOT, 'разметка'),
-         'model_config': 'models.json'}
+         'model_config': 'models.json',
+         'additional_data':'cs_Method_Task.csv'}
 class2tag = dict(enumerate(ASPECTS_LIST))
 tag2class = dict(zip(class2tag.values(), class2tag.keys()))
 num_labels = len(tag2class.keys())

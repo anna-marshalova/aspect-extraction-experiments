@@ -1,6 +1,3 @@
-import json
-from importlib import import_module
-
 from tensorflow.keras import Model
 from tensorflow.keras.activations import sigmoid
 from tensorflow.keras.layers import TimeDistributed, Dense, Dropout, Bidirectional, LSTM, Input
@@ -18,7 +15,6 @@ def get_model(model_name:str, num_labels:int=num_labels):
     :return: Модель
     """
     model_config = get_model_config(model_name)
-
     if model_config.transformer_model.__name__.endswith("ForTokenClassification"):
         config = model_config.transformer_config.from_pretrained(model_config.pretrained_model_name, num_labels=num_labels)
         model = model_config.transformer_model.from_pretrained(model_config.pretrained_model_name, config=config, from_pt = model_config.from_pt)

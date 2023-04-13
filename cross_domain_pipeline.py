@@ -17,7 +17,7 @@ class CrossDomainPipeline:
 
     def __init__(self, test_domain: str, samples: Tuple[List[List[List[str]]], List[List[List[str]]]], model_name: str,
                  experiment_series_name: str, weights_dir: str = paths['cross_domain_weights'],
-                 domains: List[str] = DOMAINS):
+                 domains: List[str] = DOMAINS, additional_samples: Tuple[List[List[str]], List[List[str]]] = ([],[])):
         """
         :param test_domain: Название предметной области, на которой будет тестироваться модель
         :param domains: Список всех предметных областей
@@ -27,6 +27,7 @@ class CrossDomainPipeline:
         :param model_name: Название модели
         :param experiment_series_name: Название серии кросс-доменных экспериментов
         :param weights_dir: Путь к папке с весами модели
+        :param additional_samples: Дополнительные данные для обучения
         """
         self._weights_dir = weights_dir
         self._domains = domains
@@ -36,6 +37,7 @@ class CrossDomainPipeline:
         self._experiment_series_name = experiment_series_name
         self._experiment_name = f'{self._test_domain}_{self._experiment_series_name}_{self._model_name}'
         self.train_samples, self.test_samples, self.train_labels, self.test_labels = self._split_data(samples)
+        self.additional_samples, self.additional_labels = additional_samples
 
     def _split_data(self, samples: Tuple[List[List[List[str]]], List[List[List[str]]]]) -> Tuple[
         List[List[str]], List[List[str]], List[List[str]], List[List[str]]]:
@@ -68,7 +70,7 @@ class CrossDomainPipeline:
         """
         logging.basicConfig(level=logging.ERROR)
         trainer = Trainer(
-            samples=(self.train_samples, self.train_labels),
+            samples=(self.train_samples+self.additional_samples, self.train_labels+self.additional_labels),
             experiment_name=self._experiment_name,
             model_name=self._model_name,
             model=self._model)
