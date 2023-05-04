@@ -167,27 +167,30 @@ class Evaluator:
             chains.append(tuple([start, end]))
         return chains
 
-    def exact_match_accuracy(self)-> OrderedDict:
+    def exact_match_metrics(self)-> OrderedDict:
         """
         Вычисление точности полного совпадения аспектов: число полностью правильно извлеченных аспектов/число аспектов в тестовых данных
         Если хотя бы одно слово не вошло в аспект, или, наоборот, вошло лишнее, аспект считается извлеченным неправильно
         :return: Датафрейм с точностями полного совпадения для каждого аспекта + микро- и макроусреднения по всем тэгам
         """
         total_intersection, total_true_chains = 0, 0
-        ema_dict = OrderedDict()
-        for tag_idx, tag in self._class2tag.items():
+        exact_match = {'Precision':OrderedDict(), 'Recall':OrderedDict(), 'F1':OrderedDict()}
+        for tag_idx, tag in list(self._class2tag.items())[:-1]:
                 true_chains = set(self._make_label_chains(self.true_labels[:, tag_idx]))
                 pred_chains = set(self._make_label_chains(self.predicted_labels[:, tag_idx]))
                 # число правильно извлеченных аспектов
                 intersection = len(true_chains&pred_chains)
                 # число аспектов в тестовых данных
                 num_true_chains = len(true_chains)
+                num_pred_chains = len(pred_chains)
                 total_intersection += intersection
                 total_true_chains += num_true_chains
-                ema_for_tag = intersection / num_true_chains if num_true_chains else 0.0
-                ema_dict.update({tag: ema_for_tag})
-        micro_ema = total_intersection/total_true_chains if total_true_chains else 0.0
-        ema_dict.update({'Micro': micro_ema})
-        ema_df = pd.DataFrame.from_dict(ema_dict, orient='index', columns=['Exact match accuracy'])
-        ema_df.loc['Macro'] = ema_df[:-1].mean()
-        return ema_df
+                f1_for_tag = 2*intersection / (num_true_chains+num_pred_chains) if num_true_chains or num_pred_chains else 0.0
+                exact_match['F1'].update({tag: f1_for_tag})
+                recall_for_tag = intersection / num_true_chains if num_true_chains else 0.0
+                exact_match['Recall'].update({tag: recall_for_tag})
+                precision_for_tag = intersection / num_pred_chains if num_pred_chains else 0.0
+                exact_match['Precision'].update({tag: precision_for_tag})
+        exact_match_df = pd.DataFrame.from_dict(exact_match)
+        exact_match_df.loc['Macro'] = exact_match_df[:-1].mean()
+        return exact_match_df

@@ -1,7 +1,6 @@
 import os
-import json
 import numpy as np
-from importlib import import_module
+
 from typing import List, Tuple, Generator
 from sklearn.model_selection import train_test_split
 
@@ -9,6 +8,7 @@ from tensorflow.keras.optimizers.schedules import ExponentialDecay
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler, History
 from tensorflow.keras.metrics import CategoricalAccuracy
+from transformers import AdamWeightDecay
 
 from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, RANDOM_STATE, paths, tag2class, sort_dataset
 from model import get_model
@@ -17,7 +17,8 @@ from config import get_model_config
 
 class Trainer:
     """Класс для обучения модели"""
-    def __init__(self, samples:Tuple[List[List[str]],List[List[str]]], model_name:str, experiment_name:str, weights_dir:str=paths['weights'], load_weights:bool=False, model=None, vectorizer:Vectorizer=None, batch_size: int = 16):
+    def __init__(self, samples:Tuple[List[List[str]],List[List[str]]], model_name:str, experiment_name:str, weights_dir:str=paths['weights'], load_weights:bool=False, model=None, vectorizer:Vectorizer=None, batch_size: int = 16,
+                 random_state = RANDOM_STATE):
         """
         :param samples: Кортеж, в котором первый элемент список текстов, второй - список тэгов
         :param model_name: Название модели
@@ -27,8 +28,10 @@ class Trainer:
         :param model: Модель, созданная заранее
         :param vectorizer: Векторизатор, созданный заранее
         :param batch_size: Размер батча
+        :param random_state: Случайное состояние для деления данных
         """
         self._tag2class = tag2class
+        self.random_state = random_state
         if model:
             self._model = model
         else:
@@ -49,7 +52,7 @@ class Trainer:
 
         self._batch_size = batch_size
         self._X_train, self._X_val, self._y_train, self._y_val = train_test_split(samples[0], samples[1],
-                                                                                  random_state=RANDOM_STATE)
+                                                                                  random_state=self.random_state)
         self._X_train, self._y_train = sort_dataset(self._X_train, self._y_train)
         self._X_val, self._y_val = sort_dataset(self._X_val, self._y_val)
         print(f'{len(self._X_train)} train samples, {len(self._X_val)} val samples')
@@ -67,9 +70,8 @@ class Trainer:
     def _set_config(self):
         self._model_config = get_model_config(self._model_name)
         self._learning_rate = self._model_config.learning_rate
-        self._schedule = ExponentialDecay(initial_learning_rate=self._learning_rate,
-                                         decay_steps=2 * self._steps_per_epoch, decay_rate=0.9)
-        self._optimizer = Adam(learning_rate=self._schedule)
+        self._optimizer = Adam(learning_rate=self._learning_rate)
+        #self._optimizer = transformers.AdamWeightDecay(learning_rate=self._learning_rate)
         self._loss = self._model_config.loss()
 
     def set_learning_rate(self, learning_rate):
@@ -91,7 +93,7 @@ class Trainer:
             X_masks = []
             y = []
             i += self._batch_size
-            # если архитектура модели позволяет, выбираем свою максимальную длинну для каждого батча
+            # если архитектура модели позволяет, выбираем свою максимальную длинну текста для каждого батча
             if self._model_config.transformer_model.__name__.endswith("ForTokenClassification"):
                 max_length = max([len(text) for text in texts]) * 2
             else:
@@ -115,10 +117,8 @@ class Trainer:
         """
         saver = ModelCheckpoint(self._path_to_weights, monitor='val_loss', verbose=1, save_best_only=True, mode='auto',
                                 save_weights_only=True)
-        stopper = EarlyStopping(monitor='val_loss', patience=patience, verbose=1, mode='auto',
-                                restore_best_weights=True)
-        scheduler = LearningRateScheduler(self._schedule)
-        callbacks = [stopper, scheduler]
+        stopper = EarlyStopping(monitor='val_loss', patience=patience, verbose=1, mode='auto',restore_best_weights=True)
+        callbacks = [stopper]
         if save_weights:
             callbacks.append(saver)
         self._model.compile(

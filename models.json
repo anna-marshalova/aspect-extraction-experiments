@@ -1,27 +1,56 @@
 {
   "mbert": {
-    "transformer_model": "TFBertForTokenClassification"},
+    "transformer_model": "transformers.TFBertForTokenClassification",
+    "learning_rate": 1e-4
+  },
   "rubert": {
     "pretrained_model_name": "DeepPavlov/rubert-base-cased",
-    "transformer_model": "TFBertForTokenClassification",
-    "from_pt": true},
+    "transformer_model": "transformers.TFBertForTokenClassification",
+    "from_pt": true
+  },
   "rubert-tiny": {
     "pretrained_model_name": "cointegrated/rubert-tiny2",
-    "transformer_model": "TFBertForTokenClassification",
+    "transformer_model": "transformers.TFBertForTokenClassification",
     "from_pt": true
   },
   "ruSciBERT": {
-    "pretrained_model_name": "sberbank-ai/ruSciBERT",
-    "transformer_config": "RobertaConfig",
-    "transformer_model": "TFRobertaForTokenClassification",
-    "transformer_tokenizer": "RobertaTokenizer",
+    "pretrained_model_name": "ai-forever/ruSciBERT",
+    "transformer_config": "transformers.RobertaConfig",
+    "transformer_model": "transformers.TFRobertaForTokenClassification",
+    "transformer_tokenizer": "transformers.RobertaTokenizer",
     "from_pt": true
   },
-  "mbert_bilstm": {"bilstm_size": 50},
-  "mbert_bilstm_frozen": {"bilstm_size": 50,"freeze_weights": true},
+  "ruSciBERT_bilstm": {
+    "pretrained_model_name": "ai-forever/ruSciBERT",
+    "transformer_config": "transformers.RobertaConfig",
+    "transformer_model": "transformers.TFRobertaForTokenClassification",
+    "transformer_tokenizer": "transformers.RobertaTokenizer",
+    "from_pt": true,
+    "bilstm_size": 50
+  },
+  "mbert_bilstm": {
+    "bilstm_size": 50
+  },
+  "mbert_bilstm_frozen": {
+    "bilstm_size": 50,
+    "freeze_weights": true,
+    "learning_rate": 1e-3
+  },
+  "mbert_frozen": {
+    "freeze_weights": true,
+    "learning_rate": 1e-3
+  },
   "mbert_crf": {
     "add_crf": true,
-    "loss" : "SigmoidFocalCrossEntropy"
+    "loss": "tensorflow_addons.losses.SigmoidFocalCrossEntropy"
   },
-  "mbert_for_sents": {"classify_sequence": true}
+  "mbert_crf_frozen": {
+    "add_crf": true,
+    "loss": "tensorflow_addons.losses.SigmoidFocalCrossEntropy",
+    "freeze_weights": true,
+    "learning_rate": 1e-3
+  },
+  "mbert_for_sents": {
+    "classify_sequence": true
+  }
 }

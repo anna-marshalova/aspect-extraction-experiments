@@ -3,7 +3,7 @@ from tensorflow.keras.activations import sigmoid
 from tensorflow.keras.layers import TimeDistributed, Dense, Dropout, Bidirectional, LSTM, Input
 from tensorflow_addons.layers import CRF
 
-from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, paths, num_labels
+from utils import MAX_LENGTH_FOR_TOKENIZER as MAX_LENGTH, num_labels
 from config import get_model_config
 
 

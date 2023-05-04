@@ -177,7 +177,7 @@ class HeuristicValidator:
                         if (self._ispunct(cur_parse,
                                           cur_token) and cur_token not in self.L_PAIRED_PUNCT) or self._isconj_prcl(
                             cur_parse, cur_token, prev_token) or (
-                                self._isprep(cur_parse, cur_token, prev_token) and self._canstartwithprep(aspect)):
+                                self._isprep(cur_parse, cur_token, prev_token) and not self._canstartwithprep(aspect)):
                             aspects_deleted = self._delete_aspect(aspect, aspects_deleted)
                 updated_result[i] = (cur_token, aspects_deleted)
         return [updated_result[i] for i in range(len(result))]

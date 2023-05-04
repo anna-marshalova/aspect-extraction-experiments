@@ -9,7 +9,7 @@ from model import get_model
 from trainer import Trainer
 from predictor import Predictor
 from evaluator import Evaluator
-from utils import DOMAINS, paths
+from utils import RANDOM_STATE, DOMAINS, paths
 
 
 class CrossDomainPipeline:
@@ -17,7 +17,7 @@ class CrossDomainPipeline:
 
     def __init__(self, test_domain: str, samples: Tuple[List[List[List[str]]], List[List[List[str]]]], model_name: str,
                  experiment_series_name: str, weights_dir: str = paths['cross_domain_weights'],
-                 domains: List[str] = DOMAINS, additional_samples: Tuple[List[List[str]], List[List[str]]] = ([],[])):
+                 domains: List[str] = DOMAINS, additional_samples: Tuple[List[List[str]], List[List[str]]] = ([],[]), random_state = RANDOM_STATE, model = None):
         """
         :param test_domain: Название предметной области, на которой будет тестироваться модель
         :param domains: Список всех предметных областей
@@ -28,16 +28,24 @@ class CrossDomainPipeline:
         :param experiment_series_name: Название серии кросс-доменных экспериментов
         :param weights_dir: Путь к папке с весами модели
         :param additional_samples: Дополнительные данные для обучения
+        :param random_state: Случайное состояние для деления данных
+        :param model: Модель, созданная заранее
         """
         self._weights_dir = weights_dir
         self._domains = domains
         self._test_domain = test_domain
         self._model_name = model_name
-        self._model = get_model(self._model_name)
+        if model:
+            self._model = model
+        else:
+            self._model = get_model(self._model_name)
         self._experiment_series_name = experiment_series_name
-        self._experiment_name = f'{self._test_domain}_{self._experiment_series_name}_{self._model_name}'
         self.train_samples, self.test_samples, self.train_labels, self.test_labels = self._split_data(samples)
         self.additional_samples, self.additional_labels = additional_samples
+        self.random_state = random_state
+        self._experiment_name = f'{self._test_domain}_{self._experiment_series_name}_{self._model_name}'
+        if self.random_state!=RANDOM_STATE:
+            self._experiment_name += f'_{self.random_state}'
 
     def _split_data(self, samples: Tuple[List[List[List[str]]], List[List[List[str]]]]) -> Tuple[
         List[List[str]], List[List[str]], List[List[str]], List[List[str]]]:
@@ -73,7 +81,8 @@ class CrossDomainPipeline:
             samples=(self.train_samples+self.additional_samples, self.train_labels+self.additional_labels),
             experiment_name=self._experiment_name,
             model_name=self._model_name,
-            model=self._model)
+            model=self._model,
+            random_state=self.random_state)
         history = trainer.train(save_weights=save_weights)
         return history
 
