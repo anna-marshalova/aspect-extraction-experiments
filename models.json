@@ -28,6 +28,23 @@
     "from_pt": true,
     "bilstm_size": 50
   },
+  "ruSciBERT_bilstm_frozen": {
+    "pretrained_model_name": "ai-forever/ruSciBERT",
+    "transformer_config": "transformers.RobertaConfig",
+    "transformer_model": "transformers.TFRobertaForTokenClassification",
+    "transformer_tokenizer": "transformers.RobertaTokenizer",
+    "from_pt": true,
+    "freeze_weights": true,
+    "bilstm_size": 50
+  },
+  "ruSciBERT_frozen": {
+    "pretrained_model_name": "ai-forever/ruSciBERT",
+    "transformer_config": "transformers.RobertaConfig",
+    "transformer_model": "transformers.TFRobertaForTokenClassification",
+    "transformer_tokenizer": "transformers.RobertaTokenizer",
+    "from_pt": true,
+    "freeze_weights": true
+  },
   "mbert_bilstm": {
     "bilstm_size": 50
   },
